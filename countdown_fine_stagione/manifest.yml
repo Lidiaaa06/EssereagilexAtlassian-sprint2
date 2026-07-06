@@ -1,0 +1,25 @@
+modules:
+  jira:dashboardGadget:
+    - key: countdown-fine-stagione-dashboard-gadget
+      title: Countdown fine stagione
+      description: Mostra il tempo rimanente alla fine della stagione.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: main-resource
+      render: native
+      resolver:
+        function: resolver
+
+  function:
+    - key: resolver
+      handler: index.handler
+
+resources:
+  - key: main-resource
+    path: src/frontend/index.jsx
+
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/2e03f14c-0901-4f64-a287-a9bb330f4db1
