@@ -22,7 +22,7 @@ const fallbackConfig = {
   seasonName: 'Stagione corrente'
 };
 
-const alertDays = [53, 7, 3, 1];
+const alertDays = [7, 3, 1];
 
 function getSeasonEndDate(seasonStart) {
   const result = new Date(seasonStart);
