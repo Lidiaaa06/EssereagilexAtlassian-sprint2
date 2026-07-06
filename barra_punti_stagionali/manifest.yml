@@ -1,0 +1,29 @@
+modules:
+  jira:dashboardGadget:
+    - key: barra-punti-stagionali-dashboard-gadget
+      title: Barra punti stagionali
+      description: Mostra le task completate dall'utente nella stagione corrente.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: main-resource
+      render: native
+      resolver:
+        function: resolver
+
+  function:
+    - key: resolver
+      handler: index.handler
+
+resources:
+  - key: main-resource
+    path: src/frontend/index.jsx
+
+permissions:
+  scopes:
+    - read:jira-work
+
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/319e1dbd-d817-4c7b-821c-64aa542da417
