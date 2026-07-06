@@ -1,4 +1,3 @@
-// src/resolvers/index.js
 import Resolver from '@forge/resolver';
 
 const resolver = new Resolver();

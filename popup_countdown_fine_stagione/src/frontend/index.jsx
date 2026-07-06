@@ -22,7 +22,7 @@ const fallbackConfig = {
   seasonName: 'Stagione corrente'
 };
 
-const alertDays = [7, 3, 1];
+const alertDays = [53, 7, 3, 1];
 
 function getSeasonEndDate(seasonStart) {
   const result = new Date(seasonStart);
@@ -30,7 +30,7 @@ function getSeasonEndDate(seasonStart) {
   result.setMonth(result.getMonth() + 2);
   result.setDate(0);
   result.setDate(result.getDate() - 2);
-  result.setHours(23, 59, 59, 999);
+  result.setHours(0, 0, 0, 0);
 
   return result;
 }
@@ -69,7 +69,7 @@ function formatDate(date) {
 }
 
 function getAlertKey(seasonEnd, days) {
-  return `season-alert-${seasonEnd.toISOString()}-${days}`;
+  return `season-alert-v3-${seasonEnd.toISOString()}-${days}`;
 }
 
 function Unit({ value, label }) {
