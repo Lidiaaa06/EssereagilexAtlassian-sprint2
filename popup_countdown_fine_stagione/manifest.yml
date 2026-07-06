@@ -1,0 +1,26 @@
+modules:
+  jira:dashboardGadget:
+    - key: popup-countdown-fine-stagione-dashboard-gadget
+      title: Countdown fine stagione popup
+      description: Mostra il tempo rimanente alla fine della stagione con alert a 7, 3
+        e 1 giorno.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: main-resource
+      render: native
+      resolver:
+        function: resolver
+
+  function:
+    - key: resolver
+      handler: index.handler
+
+resources:
+  - key: main-resource
+    path: src/frontend/index.jsx
+
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/dcee3f57-8494-4d5f-a2ee-a79230810222
