@@ -1,1 +1,1 @@
-export { handler, issueCompletedHandler } from './resolvers';
+export { handler, issueUpdatedHandler } from './resolvers';

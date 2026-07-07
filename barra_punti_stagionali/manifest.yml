@@ -9,9 +9,17 @@ modules:
       resolver:
         function: resolver
 
+  trigger:
+    - key: task-completed-trigger
+      function: onIssueUpdated
+      events:
+        - avi:jira:updated:issue
+
   function:
     - key: resolver
       handler: index.handler
+    - key: onIssueUpdated
+      handler: index.issueUpdatedHandler
 
 resources:
   - key: main-resource
@@ -20,6 +28,7 @@ resources:
 permissions:
   scopes:
     - read:jira-work
+    - storage:app
 
 app:
   runtime:
