@@ -8,6 +8,11 @@ const TASK_ISSUE_TYPE_NAMES = [
   'task', 'attività', 'attivita', 'story',
   'subtask', 'sub-task', 'sottotask', 'sotto-task'
 ];
+const EXCLUDED_STATUS_NAMES = [
+  'canceled', 'cancelled',
+  'closed incompleted', 'closed incomplete',
+  'closed skipped'
+];
 
 // ---------- Gestione stagioni ----------
 
@@ -99,8 +104,9 @@ export async function issueUpdatedHandler(event) {
     }
 
     const currentStatusCategory = issue.fields?.status?.statusCategory?.key;
-    console.log('currentStatusCategory:', currentStatusCategory);
-    const isNowDone = currentStatusCategory === 'done';
+    const currentStatusName = (issue.fields?.status?.name || '').toLowerCase();
+    const isExcludedStatus = EXCLUDED_STATUS_NAMES.includes(currentStatusName);
+    const isNowDone = currentStatusCategory === 'done' && !isExcludedStatus;
 
     const season = getSeasonWindow(new Date());
     console.log('season.isActive:', season.isActive);
