@@ -1,0 +1,1 @@
+export { handler, issueUpdatedHandler } from './resolvers';

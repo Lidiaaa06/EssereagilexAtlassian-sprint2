@@ -1,0 +1,32 @@
+app:
+  id: ari:cloud:ecosystem::app/365dedf7-6312-456d-9afa-995bddf5497a
+  runtime: { name: nodejs24.x, memoryMB: 256, architecture: arm64 }
+
+modules:
+  jira:dashboardGadget:
+    - key: barra-punti-permanenti
+      title: Barra Punti Legacy
+      description: Mostra i punti totali accumulati a vita dall'utente, senza reset stagionale.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: main-resource
+      render: native
+      resolver: { function: resolver }
+
+  trigger:
+    - key: task-completed-trigger
+      function: onIssueUpdated
+      events:
+        - avi:jira:updated:issue
+
+  function:
+    - key: resolver
+      handler: index.handler
+    - key: onIssueUpdated
+      handler: index.issueUpdatedHandler
+
+resources:
+  - key: main-resource
+    path: src/frontend/index.jsx
+
+permissions:
+  scopes: [read:jira-work, storage:app]
