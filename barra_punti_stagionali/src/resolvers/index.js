@@ -1,17 +1,29 @@
 import Resolver from '@forge/resolver';
-import api from '@forge/api';
 import { kvs } from '@forge/kvs';
 const resolver = new Resolver();
+// Nota: rimosso "import api from '@forge/api'" perche' non usato e causa crash al load
+// ("Cannot read properties of undefined (reading 'fetch')").
 
 const POINTS_PER_TASK = 3;
 const TASK_ISSUE_TYPE_NAMES = [
   'task', 'attività', 'attivita', 'story',
-  'subtask', 'sub-task', 'sottotask', 'sotto-task'
+  'subtask', 'sub-task', 'sottotask', 'sotto-task',
+  'incident', 'service request'
 ];
+
+// Stati che NON contano anche se verdi (categoria Done): CANCELED, CLOSED INCOMPLETED, CLOSED SKIPPED
 const EXCLUDED_STATUS_NAMES = [
   'canceled', 'cancelled',
   'closed incompleted', 'closed incomplete',
   'closed skipped'
+];
+
+// Stati che contano come completamento, riconosciuti PER NOME (fallback se statusCategory
+// non arriva): Standard DONE, Incident RESOLVED, Service Request CLOSED COMPLETED
+const COMPLETED_STATUS_NAMES = [
+  'done',
+  'resolved',
+  'closed completed'
 ];
 
 // ---------- Gestione stagioni ----------
@@ -103,10 +115,25 @@ export async function issueUpdatedHandler(event) {
       return;
     }
 
+    // Nome dello stato: il campo issue.fields.status.name e' LOCALIZZATO (es. "Annullato",
+    // "Risolta"), mentre changelog toString e' in inglese canonico ("Canceled", "Resolved")
+    // e coincide con le nostre liste. Confrontiamo entrambi per robustezza.
+    const statusItem = changelog.items?.find(item => item.field === 'status');
+    const changelogStatusName = (statusItem?.toString || '').toLowerCase();
+    const fieldStatusName = (issue.fields?.status?.name || '').toLowerCase();
     const currentStatusCategory = issue.fields?.status?.statusCategory?.key;
-    const currentStatusName = (issue.fields?.status?.name || '').toLowerCase();
-    const isExcludedStatus = EXCLUDED_STATUS_NAMES.includes(currentStatusName);
-    const isNowDone = currentStatusCategory === 'done' && !isExcludedStatus;
+
+    const isExcludedStatus =
+      EXCLUDED_STATUS_NAMES.includes(changelogStatusName) ||
+      EXCLUDED_STATUS_NAMES.includes(fieldStatusName);
+    const isDoneByCategory = currentStatusCategory === 'done';
+    const isDoneByName =
+      COMPLETED_STATUS_NAMES.includes(changelogStatusName) ||
+      COMPLETED_STATUS_NAMES.includes(fieldStatusName);
+    // Completata = NON esclusa E (categoria Done OPPURE nome noto di completamento).
+    const isNowDone = !isExcludedStatus && (isDoneByCategory || isDoneByName);
+
+    console.log(`stato: changelogName="${changelogStatusName}" fieldName="${fieldStatusName}" cat="${currentStatusCategory}" excluded=${isExcludedStatus} doneByCat=${isDoneByCategory} doneByName=${isDoneByName} -> isNowDone=${isNowDone}`);
 
     const season = getSeasonWindow(new Date());
     console.log('season.isActive:', season.isActive);
