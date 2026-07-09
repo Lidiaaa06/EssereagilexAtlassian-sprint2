@@ -1,3 +1,1 @@
-import { handler, issueUpdatedHandler } from './resolvers';
-
-export { handler, issueUpdatedHandler };
+export { handler, issueUpdatedHandler } from './resolvers';

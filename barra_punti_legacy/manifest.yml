@@ -1,43 +1,32 @@
+app:
+  id: ari:cloud:ecosystem::app/365dedf7-6312-456d-9afa-995bddf5497a
+  runtime: { name: nodejs24.x, memoryMB: 256, architecture: arm64 }
+
 modules:
   jira:dashboardGadget:
-    - key: barra-punti-stagionali-dashboard-gadget
-      title: Barra punti stagionali
-      description: Mostra le task completate dall'utente nella stagione corrente.
+    - key: barra-punti-permanenti
+      title: Barra Punti Legacy
+      description: Mostra i punti totali accumulati a vita dall'utente, senza reset stagionale.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
       resource: main-resource
       render: native
-      resolver:
-        function: resolver
-    - key: barra-punti-legacy-dashboard-gadget
-      title: Barra Punti Legacy
-      description: Mostra il totale dei punti accumulati nelle stagioni passate.
-      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: legacy-resource
-      render: native
-      resolver:
-        function: resolver
+      resolver: { function: resolver }
+
   trigger:
     - key: task-completed-trigger
       function: onIssueUpdated
       events:
         - avi:jira:updated:issue
+
   function:
     - key: resolver
       handler: index.handler
     - key: onIssueUpdated
       handler: index.issueUpdatedHandler
+
 resources:
   - key: main-resource
     path: src/frontend/index.jsx
-  - key: legacy-resource
-    path: src/frontend/legacy.jsx
+
 permissions:
-  scopes:
-    - read:jira-work
-    - storage:app
-app:
-  runtime:
-    name: nodejs24.x
-    memoryMB: 256
-    architecture: arm64
-  id: ari:cloud:ecosystem::app/319e1dbd-d817-4c7b-821c-64aa542da417
+  scopes: [read:jira-work, storage:app]
