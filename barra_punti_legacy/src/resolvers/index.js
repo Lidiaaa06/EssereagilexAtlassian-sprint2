@@ -5,15 +5,31 @@ const resolver = new Resolver();
 const POINTS_PER_TASK = 3;
 const TASK_ISSUE_TYPE_NAMES = [
   'task', 'attività', 'attivita', 'story',
-  'subtask', 'sub-task', 'sottotask', 'sotto-task'
+  'subtask', 'sub-task', 'sottotask', 'sotto-task',
+  'incident', 'service request'
 ];
+
+// Stati che NON contano anche se sono verdi (categoria Done). Dai workflow:
+//  - Incident:        CANCELED
+//  - Service Request: CLOSED INCOMPLETED, CLOSED SKIPPED
 const EXCLUDED_STATUS_NAMES = [
   'canceled', 'cancelled',
   'closed incompleted', 'closed incomplete',
   'closed skipped'
 ];
 
-// ---------- Gestione stagioni (copia identica alla logica stagionale) ----------
+// Stati che contano come completamento, riconosciuti PER NOME (fallback quando
+// statusCategory non arriva nel payload). Dai workflow:
+//  - Standard:        DONE
+//  - Incident:        RESOLVED
+//  - Service Request: CLOSED COMPLETED
+const COMPLETED_STATUS_NAMES = [
+  'done',
+  'resolved',
+  'closed completed'
+];
+
+// ---------- Gestione stagioni (invariata) ----------
 
 function getSeasonWindow(now = new Date()) {
   const year = now.getFullYear();
@@ -47,9 +63,7 @@ function isTaskIssueType(issuetypeName) {
   return TASK_ISSUE_TYPE_NAMES.includes((issuetypeName || '').toLowerCase());
 }
 
-// ---------- Storage: progresso della stagione corrente (copia interna, privata a questa app) ----------
-// Chiave: season-progress-<accountId>-<seasonKey>
-// Valore: { points, completedIssueKeys: string[] }
+// ---------- Storage: progresso della stagione corrente (copia privata a questa app) ----------
 
 async function getSeasonProgress(accountId, seasonKeyStr) {
   const key = `season-progress-${accountId}-${seasonKeyStr}`;
@@ -66,9 +80,7 @@ async function saveSeasonProgress(accountId, seasonKeyStr, progress) {
   await kvs.set(key, progress);
 }
 
-// ---------- Storage: stato legacy (totale a vita + ultima stagione già sommata) ----------
-// Chiave: legacy-state-<accountId>
-// Valore: { totalPoints, lastRolledSeasonKey }
+// ---------- Storage: stato legacy (totale a vita + ultima stagione gia' sommata) ----------
 
 async function getLegacyState(accountId) {
   const key = `legacy-state-${accountId}`;
@@ -85,20 +97,16 @@ async function saveLegacyState(accountId, state) {
   await kvs.set(key, state);
 }
 
-// Controlla se la stagione è cambiata rispetto all'ultima registrata;
-// se sì, somma i punti della stagione appena conclusa nel totale legacy (una sola volta).
 async function ensureRollover(accountId, currentSeasonKeyStr) {
   const state = await getLegacyState(accountId);
 
   if (state.lastRolledSeasonKey === null) {
-    // Prima volta in assoluto che vediamo questo utente: nessuna stagione precedente da sommare.
     state.lastRolledSeasonKey = currentSeasonKeyStr;
     await saveLegacyState(accountId, state);
     return state;
   }
 
   if (state.lastRolledSeasonKey !== currentSeasonKeyStr) {
-    // La stagione è cambiata: somma il totale della stagione precedente nel legacy.
     const prevProgress = await getSeasonProgress(accountId, state.lastRolledSeasonKey);
     state.totalPoints += prevProgress.points;
     state.lastRolledSeasonKey = currentSeasonKeyStr;
@@ -112,47 +120,79 @@ async function ensureRollover(accountId, currentSeasonKeyStr) {
 
 export async function issueUpdatedHandler(event) {
   try {
-    const issue = event.issue;
-    const changelog = event.changelog;
+    console.log('[DIAG] ===== issueUpdatedHandler START =====');
 
-    if (!issue || !changelog) return;
+    const issue = event?.issue;
+    const changelog = event?.changelog;
+
+    console.log('[DIAG] issue.key            =', issue?.key);
+    console.log('[DIAG] issuetype (payload)  =', issue?.fields?.issuetype?.name);
+    console.log('[DIAG] status.name (payload)=', issue?.fields?.status?.name);
+    console.log('[DIAG] statusCategory       =', JSON.stringify(issue?.fields?.status?.statusCategory));
+    console.log('[DIAG] changelog.items      =', JSON.stringify(changelog?.items));
+
+    if (!issue || !changelog) { console.log('[DIAG] STOP: issue o changelog mancante'); return; }
 
     const statusChanged = changelog.items?.some(item => item.field === 'status');
-    if (!statusChanged) return;
+    if (!statusChanged) { console.log('[DIAG] STOP: non e\' un cambio di stato'); return; }
 
     const issuetypeName = issue.fields?.issuetype?.name;
-    if (!isTaskIssueType(issuetypeName)) return;
+    if (!isTaskIssueType(issuetypeName)) {
+      console.log(`[DIAG] STOP: issuetype "${issuetypeName}" non in whitelist`); return;
+    }
 
     const assigneeAccountId = issue.fields?.assignee?.accountId;
-    if (!assigneeAccountId) return;
+    if (!assigneeAccountId) { console.log('[DIAG] STOP: nessun assegnatario'); return; }
 
+    // Nome dello stato: il campo issue.fields.status.name e' LOCALIZZATO (es. "Annullato",
+    // "Risolta"), mentre changelog toString e' in inglese canonico ("Canceled", "Resolved")
+    // e coincide con le nostre liste. Confrontiamo entrambi per robustezza.
+    const statusItem = changelog.items?.find(item => item.field === 'status');
+    const changelogStatusName = (statusItem?.toString || '').toLowerCase();
+    const fieldStatusName = (issue.fields?.status?.name || '').toLowerCase();
     const currentStatusCategory = issue.fields?.status?.statusCategory?.key;
-    const currentStatusName = (issue.fields?.status?.name || '').toLowerCase();
-    const isExcludedStatus = EXCLUDED_STATUS_NAMES.includes(currentStatusName);
-    const isNowDone = currentStatusCategory === 'done' && !isExcludedStatus;
+
+    const isExcludedStatus =
+      EXCLUDED_STATUS_NAMES.includes(changelogStatusName) ||
+      EXCLUDED_STATUS_NAMES.includes(fieldStatusName);
+    const isDoneByCategory = currentStatusCategory === 'done';
+    const isDoneByName =
+      COMPLETED_STATUS_NAMES.includes(changelogStatusName) ||
+      COMPLETED_STATUS_NAMES.includes(fieldStatusName);
+    // Completata = NON esclusa E (categoria Done OPPURE nome noto di completamento).
+    const isNowDone = !isExcludedStatus && (isDoneByCategory || isDoneByName);
+
+    console.log(`[DIAG] changelogName="${changelogStatusName}" fieldName="${fieldStatusName}" cat="${currentStatusCategory}" excluded=${isExcludedStatus} doneByCat=${isDoneByCategory} doneByName=${isDoneByName} -> isNowDone=${isNowDone}`);
 
     const season = getSeasonWindow(new Date());
     const currentKey = seasonKey(season);
+    console.log(`[DIAG] season.isActive=${season.isActive} seasonKey=${currentKey}`);
 
-    // Verifica sempre se serve un rollover di stagione, prima di registrare il punteggio.
     await ensureRollover(assigneeAccountId, currentKey);
 
-    if (!season.isActive) return; // fuori stagione: nessun punto stagionale da tracciare
+    if (!season.isActive) { console.log('[DIAG] STOP: fuori stagione'); return; }
 
     const progress = await getSeasonProgress(assigneeAccountId, currentKey);
     const alreadyCounted = progress.completedIssueKeys.includes(issue.key);
+    console.log(`[DIAG] alreadyCounted=${alreadyCounted} puntiPrima=${progress.points}`);
 
     if (isNowDone && !alreadyCounted) {
       progress.points += POINTS_PER_TASK;
       progress.completedIssueKeys.push(issue.key);
       await saveSeasonProgress(assigneeAccountId, currentKey, progress);
+      console.log(`[DIAG] +${POINTS_PER_TASK} -> ${progress.points}`);
     } else if (!isNowDone && alreadyCounted) {
       progress.points = Math.max(0, progress.points - POINTS_PER_TASK);
       progress.completedIssueKeys = progress.completedIssueKeys.filter(k => k !== issue.key);
       await saveSeasonProgress(assigneeAccountId, currentKey, progress);
+      console.log(`[DIAG] -${POINTS_PER_TASK} (riapertura/annullamento) -> ${progress.points}`);
+    } else {
+      console.log('[DIAG] nessuna variazione punti');
     }
+
+    console.log('[DIAG] ===== issueUpdatedHandler END =====');
   } catch (err) {
-    console.error('Errore in issueUpdatedHandler:', err.message, err.stack);
+    console.error('[DIAG] Errore in issueUpdatedHandler:', err.message, err.stack);
   }
 }
 
@@ -167,7 +207,8 @@ resolver.define('getLegacyPointsData', async (req) => {
 
   return {
     points: state.totalPoints,
-    pointsPerTask: POINTS_PER_TASK
+    pointsPerTask: POINTS_PER_TASK,
+    completedCount: Math.round(state.totalPoints / POINTS_PER_TASK)
   };
 });
 
