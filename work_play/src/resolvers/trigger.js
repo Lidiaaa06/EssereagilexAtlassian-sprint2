@@ -1,4 +1,4 @@
-import { aggiungiPunti, controllaStagione } from './stagione';
+import { aggiungiPunti, controllaStagione, getPuntiPerTicket } from './stagione';
 import { registraInProgress, pulisciInProgress, controllaChiusura, aggiungiSegnalazione } from './antifarming';
 import { kvs } from '@forge/kvs';
 

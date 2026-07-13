@@ -10,6 +10,7 @@ import ForgeReconciler, {
     Button,
     Tooltip,
     SectionMessage,
+    Textfield,
 } from '@forge/react';
 import { invoke } from '@forge/bridge';
 
@@ -141,6 +142,8 @@ const AdminPage = () => {
     const [messaggio, setMessaggio] = useState(null);
     // Disabilita i pulsanti mentre una chiamata è in volo (evita doppi click)
     const [inCorso, setInCorso] = useState(false);
+    // Valore configurabile: punti assegnati a ogni ticket completato
+    const [puntiPerTicket, setPuntiPerTicket] = useState('3');
 
     useEffect(() => {
         caricaDati();
@@ -151,10 +154,12 @@ const AdminPage = () => {
         return Promise.all([
             invoke('getAdminData'),
             invoke('getSegnalazioni'),
-        ]).then(([adminData, risultatoSegnalazioni]) => {
+            invoke('getConfigPunti'),
+        ]).then(([adminData, risultatoSegnalazioni, config]) => {
             setData(adminData);
             // Se l'utente non è supervisore il resolver risponde { errore }
             setSegnalazioni(risultatoSegnalazioni.segnalazioni || []);
+            setPuntiPerTicket(String(config.puntiPerTicket));
             return adminData;
         });
     };
@@ -222,6 +227,14 @@ const AdminPage = () => {
             'marcaSegnalazioneVista',
             { segnalazioneId: segnalazione.id },
             `Segnalazione su ${segnalazione.issueKey} archiviata.`
+        );
+    };
+
+    const handleSalvaPunti = () => {
+        eseguiAzione(
+            'setConfigPunti',
+            { puntiPerTicket: Number(puntiPerTicket) },
+            `Punti per ticket impostati a ${puntiPerTicket}.`
         );
     };
 
@@ -368,6 +381,22 @@ const AdminPage = () => {
                         )}
                     </Stack>
                 )}
+            </Stack>
+
+            {/* --- Punti per ticket --- */}
+            <Stack space="space.100">
+                <Heading>🎯 Punti per ticket</Heading>
+                <Text>Punti assegnati a ogni task completata. Vale dal prossimo aggiornamento.</Text>
+                <Inline space="space.100" alignBlock="center">
+                    <Textfield
+                        type="number"
+                        value={puntiPerTicket}
+                        onChange={(e) => setPuntiPerTicket(e.target.value)}
+                    />
+                    <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaPunti}>
+                        Salva
+                    </Button>
+                </Inline>
             </Stack>
 
             {/* --- Gestione ruolo --- */}

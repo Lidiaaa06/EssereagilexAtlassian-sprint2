@@ -3,7 +3,7 @@ import api, { route } from '@forge/api';
 import { BADGES, getUserBadges, assignBadge, removeBadge } from './badges';
 import { SFIDE, getSfideUtente, accettaSfida, completaSfida, pulisciSfideScadute, getPuntiBonus } from './sfide';
 import { salvaValutazione, getPuntiValutazione } from './valutazione';
-import { getPuntiStagione, getPuntiLegacy, getNumeroStagione, getGiorniRimanenti, controllaStagione, getStatoStagioneTestuale, getTicketStagione, getRiepilogoStagione, getCountdownNuovaStagione } from './stagione';
+import { getPuntiStagione, getPuntiLegacy, getNumeroStagione, getGiorniRimanenti, controllaStagione, getStatoStagioneTestuale, getTicketStagione, getRiepilogoStagione, getCountdownNuovaStagione, getPuntiPerTicket, setPuntiPerTicket } from './stagione';
 import { aggiungiHallOfFame, getHallOfFame, toggleReaction, aggiungiCommento, eliminaCommento } from './halloffame';
 import { aggiungiPensiero, getPensieri, toggleReactionPensiero, aggiungiCommentoPensiero, eliminaCommentoPensiero, eliminaPensiero, getStatoPensiero, resetLimiteGiornaliero } from './pensieri';
 import { getRuolo, getRuoli, isSupervisore, assegnaRuolo } from './ruoli';
@@ -436,5 +436,23 @@ resolver.define('marcaSegnalazioneVista', async ({ payload }) => {
   return { successo: true, segnalazioni };
 });
 
+
+// ---------------------------------------------------------------------------
+// CONFIG PUNTI — punti per ticket, modificabili dal supervisore
+// ---------------------------------------------------------------------------
+
+resolver.define('getConfigPunti', async () => {
+  return { puntiPerTicket: await getPuntiPerTicket() };
+});
+
+resolver.define('setConfigPunti', async ({ payload }) => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) {
+    return { errore: 'Non hai i permessi per modificare i punti' };
+  }
+  const val = await setPuntiPerTicket(payload.puntiPerTicket);
+  return { successo: true, puntiPerTicket: val };
+});
 
 export const handler = resolver.getDefinitions();
