@@ -9,6 +9,15 @@ modules:
       resolver:
         function: resolver
 
+  jira:issuePanel:
+    - key: golden-ticket-panel
+      title: Golden Ticket
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: golden-ticket-ui
+      render: native
+      resolver:
+        function: resolver
+
   trigger:
     - key: task-completed-trigger
       function: onIssueUpdated
@@ -24,10 +33,13 @@ modules:
 resources:
   - key: main-resource
     path: src/frontend/index.jsx
+  - key: golden-ticket-ui
+    path: src/frontend/goldenTicket.jsx
 
 permissions:
   scopes:
     - read:jira-work
+    - write:jira-work
     - storage:app
 
 app:
