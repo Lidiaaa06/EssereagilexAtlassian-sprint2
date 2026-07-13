@@ -1,0 +1,94 @@
+modules:
+  jira:dashboardGadget:
+    - key: gamification-classifica-user-dashboard-gadget-ui-kit-2-hello-world-gadget
+      title: Gamification - Profilo
+      description: Profilo gamification dell'utente.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: main-resource
+      render: native
+      resolver:
+        function: resolver
+    - key: gamification-classifica-user-classifica-gadget
+      title: Classifica Team - Gamification
+      description: Classifica del team basata sui punti.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: classifica-resource
+      render: native
+      resolver:
+        function: resolver
+    - key: gamification-classifica-user-halloffame-gadget
+      title: Hall of Fame
+      description: I ticket più memorabili del team.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: halloffame-resource
+      render: native
+      resolver:
+        function: resolver
+    - key: gamification-classifica-user-pensieri-gadget
+      title: Pensieri di fine giornata
+      description: Condividi i tuoi pensieri con il team.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: pensieri-resource
+      render: native
+      resolver:
+        function: resolver
+  jira:issuePanel:
+    - key: gamification-classifica-user-issue-panel
+      title: Valutazione & Hall of Fame
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: panel-resource
+      render: native
+      resolver:
+        function: resolver
+    - key: gamification-classifica-user-sfide-panel
+      title: Sfide Attive
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: sfide-panel-resource
+      render: native
+      resolver:
+        function: resolver
+  jira:adminPage:
+    - key: gamification-classifica-user-admin-page
+      title: WorkPlay Admin
+      resource: admin-resource
+      render: native
+      resolver:
+        function: resolver
+  trigger:
+    - key: ticket-done-trigger
+      function: triggerHandler
+      events:
+        - avi:jira:updated:issue
+  function:
+    - key: resolver
+      handler: resolvers/index.handler
+    - key: triggerHandler
+      handler: resolvers/trigger.handler
+resources:
+  - key: main-resource
+    path: src/frontend/index.jsx
+  - key: panel-resource
+    path: src/frontend/panel.jsx
+  - key: classifica-resource
+    path: src/frontend/classifica.jsx
+  - key: halloffame-resource
+    path: src/frontend/halloffame.jsx
+  - key: pensieri-resource
+    path: src/frontend/pensieri.jsx
+  - key: sfide-panel-resource
+    path: src/frontend/sfide-panel.jsx
+  - key: admin-resource
+    path: src/frontend/admin.jsx
+permissions:
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - read:jira-user
+    - read:me
+    - storage:app
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/c1e6e217-3a9e-47f4-bf92-122e731a1bc1

@@ -68,7 +68,7 @@ async function getProgress(accountId, season) {
 }
 
 async function saveProgress(accountId, season, progress) {
-  const key = `progress-${accountId}-${seasonKey(season)}`;
+  const key = `progress-${accountId}-${seasonKey(season)}-test`;
   await kvs.set(key, progress);
 }
 
