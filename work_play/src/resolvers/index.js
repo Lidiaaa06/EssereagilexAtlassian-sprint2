@@ -2,7 +2,7 @@ import Resolver from '@forge/resolver';
 import api, { route } from '@forge/api';
 import { BADGES, getUserBadges, assignBadge, removeBadge } from './badges';
 import { SFIDE, getSfideUtente, accettaSfida, completaSfida, pulisciSfideScadute, getPuntiBonus } from './sfide';
-import { salvaValutazione, getPuntiValutazione } from './valutazione';
+import { salvaValutazione, getPuntiValutazione, getValutazioniCongelate, confermaValutazione, rifiutaValutazione, getPuntiValutazioneConfig, setPuntiValutazioneConfig, getStatoValutazione } from './valutazione';
 import { getPuntiStagione, getPuntiLegacy, getNumeroStagione, getGiorniRimanenti, controllaStagione, getStatoStagioneTestuale, getTicketStagione, getRiepilogoStagione, getCountdownNuovaStagione, getPuntiPerTicket, setPuntiPerTicket } from './stagione';
 import { richiediHallOfFame, getRichiesteHallOfFame, approvaRichiesta, rifiutaRichiesta, getHallOfFame, toggleReaction, aggiungiCommento, eliminaCommento } from './halloffame';
 import { aggiungiPensiero, getPensieri, toggleReactionPensiero, aggiungiCommentoPensiero, eliminaCommentoPensiero, eliminaPensiero, getStatoPensiero, resetLimiteGiornaliero } from './pensieri';
@@ -134,7 +134,53 @@ resolver.define('valutaTicket', async ({ context, payload }) => {
     route`/rest/api/3/myself`
   );
   const me = await meResponse.json();
-  return await salvaValutazione(me.accountId, payload.risoluzione, payload.documentazione, payload.feedback);
+  // Non assegna punti: crea una valutazione congelata in attesa del supervisore.
+  return await salvaValutazione(me.accountId, me.displayName, payload.issueKey, payload.risoluzione, payload.documentazione, payload.feedback);
+});
+
+// Stato della valutazione dell'utente corrente su un ticket (per il panel).
+resolver.define('getStatoValutazione', async ({ payload }) => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  return { stato: await getStatoValutazione(me.accountId, payload.issueKey) };
+});
+
+// Valutazioni in attesa di conferma (solo supervisore).
+resolver.define('getValutazioniCongelate', async () => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) return { errore: 'Non autorizzato' };
+  return { valutazioni: await getValutazioniCongelate() };
+});
+
+// Conferma (eventualmente con scelte modificate dal supervisore) → applica i punti.
+resolver.define('confermaValutazione', async ({ payload }) => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) return { errore: 'Non autorizzato' };
+  return await confermaValutazione(payload.id, payload.risoluzione, payload.documentazione, payload.feedback);
+});
+
+// Rifiuta → nessun punto.
+resolver.define('rifiutaValutazione', async ({ payload }) => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) return { errore: 'Non autorizzato' };
+  return await rifiutaValutazione(payload.id);
+});
+
+// Griglia punteggi valutazione (valori reali). Lettura libera nell'admin.
+resolver.define('getConfigValutazione', async () => {
+  return { config: await getPuntiValutazioneConfig() };
+});
+
+// Salvataggio griglia punteggi valutazione (solo supervisore).
+resolver.define('setConfigValutazione', async ({ payload }) => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) return { errore: 'Non autorizzato' };
+  const config = await setPuntiValutazioneConfig(payload.config);
+  return { successo: true, config };
 });
 
 resolver.define('getIssueStatus', async ({ context }) => {

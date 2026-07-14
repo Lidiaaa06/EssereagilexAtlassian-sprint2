@@ -15,6 +15,30 @@ import ForgeReconciler, {
 import { invoke } from '@forge/bridge';
 
 // Etichetta leggibile per ogni tipo di flag prodotto da antifarming.js
+// Opzioni per la modifica delle autovalutazioni (stessi valori del panel operatore)
+const OPZIONI_RISOLUZIONE = [
+    { label: '🧠 In autonomia', value: 'autonomia' },
+    { label: '🤝 Con collega', value: 'collega' },
+    { label: '👔 Con manager', value: 'manager' },
+];
+const OPZIONI_DOCUMENTAZIONE = [
+    { label: '✅ Corretta', value: 'corretta' },
+    { label: '⚠️ Errata', value: 'errata' },
+    { label: '❌ Nessuna', value: 'nessuna' },
+];
+const OPZIONI_FEEDBACK = [
+    { label: '😊 Positivo', value: 'positivo' },
+    { label: '😞 Negativo', value: 'negativo' },
+    { label: '😐 Nessuno', value: 'nessuno' },
+];
+
+// Struttura della griglia punteggi valutazione (per generare il form nell'admin)
+const GRIGLIA_VAL = [
+    { gruppo: 'risoluzione', titolo: 'Risoluzione', voci: [['autonomia', 'In autonomia'], ['collega', 'Con collega'], ['manager', 'Con manager']] },
+    { gruppo: 'documentazione', titolo: 'Documentazione', voci: [['corretta', 'Corretta'], ['errata', 'Errata'], ['nessuna', 'Nessuna']] },
+    { gruppo: 'feedback', titolo: 'Feedback', voci: [['positivo', 'Positivo'], ['negativo', 'Negativo'], ['nessuno', 'Nessuno']] },
+];
+
 const ETICHETTE_FLAG = {
     TROPPO_VELOCE: '⚡ Chiuso troppo in fretta',
     SALTO_IN_PROGRESS: '⏭️ Mai passato da In Progress',
@@ -146,6 +170,12 @@ const AdminPage = () => {
     const [puntiPerTicket, setPuntiPerTicket] = useState('3');
     // Richieste di inserimento in Hall of Fame, in attesa di approvazione
     const [richiesteHOF, setRichiesteHOF] = useState([]);
+    // Autovalutazioni congelate in attesa di conferma
+    const [valutazioni, setValutazioni] = useState([]);
+    // Scelte editate dal supervisore per ogni valutazione: { [id]: {risoluzione, documentazione, feedback} }
+    const [valModifiche, setValModifiche] = useState({});
+    // Griglia punteggi valutazione configurabile (valori reali, come stringhe per l'input)
+    const [puntiVal, setPuntiVal] = useState(null);
 
     useEffect(() => {
         caricaDati();
@@ -158,12 +188,45 @@ const AdminPage = () => {
             invoke('getSegnalazioni'),
             invoke('getConfigPunti'),
             invoke('getRichiesteHallOfFame'),
-        ]).then(([adminData, risultatoSegnalazioni, config, risultatoHOF]) => {
+            invoke('getValutazioniCongelate'),
+            invoke('getConfigValutazione'),
+        ]).then(([adminData, risultatoSegnalazioni, config, risultatoHOF, risultatoVal, configVal]) => {
             setData(adminData);
             // Se l'utente non è supervisore il resolver risponde { errore }
             setSegnalazioni(risultatoSegnalazioni.segnalazioni || []);
             setPuntiPerTicket(String(config.puntiPerTicket));
             setRichiesteHOF(risultatoHOF.richieste || []);
+            const listaVal = risultatoVal.valutazioni || [];
+            setValutazioni(listaVal);
+            // Pre-compila le scelte editabili con quelle originali dell'operatore
+            const modificheIniziali = {};
+            listaVal.forEach((v) => {
+                modificheIniziali[v.id] = {
+                    risoluzione: v.risoluzione,
+                    documentazione: v.documentazione,
+                    feedback: v.feedback,
+                };
+            });
+            setValModifiche(modificheIniziali);
+            // Griglia punteggi valutazione → in stringhe per gli input
+            const c = configVal.config;
+            setPuntiVal({
+                risoluzione: {
+                    autonomia: String(c.risoluzione.autonomia),
+                    collega: String(c.risoluzione.collega),
+                    manager: String(c.risoluzione.manager),
+                },
+                documentazione: {
+                    corretta: String(c.documentazione.corretta),
+                    errata: String(c.documentazione.errata),
+                    nessuna: String(c.documentazione.nessuna),
+                },
+                feedback: {
+                    positivo: String(c.feedback.positivo),
+                    negativo: String(c.feedback.negativo),
+                    nessuno: String(c.feedback.nessuno),
+                },
+            });
             return adminData;
         });
     };
@@ -256,6 +319,65 @@ const AdminPage = () => {
             { issueKey: r.id },
             `Richiesta su ${r.id} rifiutata.`
         );
+    };
+
+    // Aggiorna una scelta editata dal supervisore per una valutazione
+    const setScelta = (id, campo, valore) => {
+        setValModifiche((prev) => ({
+            ...prev,
+            [id]: { ...prev[id], [campo]: valore },
+        }));
+    };
+
+    const handleConfermaVal = (v) => {
+        const scelte = valModifiche[v.id] || {
+            risoluzione: v.risoluzione,
+            documentazione: v.documentazione,
+            feedback: v.feedback,
+        };
+        eseguiAzione(
+            'confermaValutazione',
+            { id: v.id, ...scelte },
+            `Valutazione di ${v.nome} su ${v.issueKey || '—'} confermata.`
+        );
+    };
+
+    const handleRifiutaVal = (v) => {
+        eseguiAzione(
+            'rifiutaValutazione',
+            { id: v.id },
+            `Valutazione di ${v.nome} rifiutata (nessun punto assegnato).`
+        );
+    };
+
+    // Aggiorna un valore della griglia punteggi valutazione
+    const setPuntoVal = (gruppo, chiave, valore) => {
+        setPuntiVal((prev) => ({
+            ...prev,
+            [gruppo]: { ...prev[gruppo], [chiave]: valore },
+        }));
+    };
+
+    const handleSalvaPuntiVal = () => {
+        // Converte le stringhe in numeri reali prima di inviare
+        const config = {
+            risoluzione: {
+                autonomia: Number(puntiVal.risoluzione.autonomia),
+                collega: Number(puntiVal.risoluzione.collega),
+                manager: Number(puntiVal.risoluzione.manager),
+            },
+            documentazione: {
+                corretta: Number(puntiVal.documentazione.corretta),
+                errata: Number(puntiVal.documentazione.errata),
+                nessuna: Number(puntiVal.documentazione.nessuna),
+            },
+            feedback: {
+                positivo: Number(puntiVal.feedback.positivo),
+                negativo: Number(puntiVal.feedback.negativo),
+                nessuno: Number(puntiVal.feedback.nessuno),
+            },
+        };
+        eseguiAzione('setConfigValutazione', { config }, 'Punteggi valutazione salvati.');
     };
 
     if (data === null) return <Text>Caricamento pannello admin...</Text>;
@@ -419,6 +541,36 @@ const AdminPage = () => {
                 </Inline>
             </Stack>
 
+            {/* --- Punteggi valutazione (griglia configurabile) --- */}
+            {puntiVal && (
+                <Stack space="space.100">
+                    <Heading>⚖️ Punteggi autovalutazione</Heading>
+                    <Text>Punti reali per ogni scelta dell'autovalutazione. Ammessi decimali e negativi.</Text>
+                    {GRIGLIA_VAL.map((sez) => (
+                        <Stack key={sez.gruppo} space="space.050">
+                            <Text font={{ weight: 'bold' }}>{sez.titolo}</Text>
+                            <Inline space="space.200" shouldWrap>
+                                {sez.voci.map(([chiave, etichetta]) => (
+                                    <Stack key={chiave} space="space.050">
+                                        <Text>{etichetta}</Text>
+                                        <Textfield
+                                            type="number"
+                                            value={puntiVal[sez.gruppo][chiave]}
+                                            onChange={(e) => setPuntoVal(sez.gruppo, chiave, e.target.value)}
+                                        />
+                                    </Stack>
+                                ))}
+                            </Inline>
+                        </Stack>
+                    ))}
+                    <Inline>
+                        <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaPuntiVal}>
+                            Salva punteggi valutazione
+                        </Button>
+                    </Inline>
+                </Stack>
+            )}
+
             {/* --- Richieste Hall of Fame --- */}
             <Stack space="space.100">
                 <Inline space="space.100" alignBlock="center">
@@ -465,6 +617,77 @@ const AdminPage = () => {
                                 </Stack>
                             </Box>
                         ))}
+                    </Stack>
+                )}
+            </Stack>
+
+            {/* --- Autovalutazioni da confermare --- */}
+            <Stack space="space.100">
+                <Inline space="space.100" alignBlock="center">
+                    <Heading>📋 Autovalutazioni da confermare</Heading>
+                    {valutazioni.length > 0 && (
+                        <Lozenge appearance="new">{valutazioni.length} in attesa</Lozenge>
+                    )}
+                </Inline>
+                <Text>
+                    I punti NON sono ancora assegnati. Conferma per applicarli, oppure
+                    modifica le scelte (il punteggio si ricalcola) prima di confermare.
+                </Text>
+
+                {valutazioni.length === 0 ? (
+                    <Text>Nessuna autovalutazione in attesa. 👍</Text>
+                ) : (
+                    <Stack space="space.100">
+                        {valutazioni.map((v) => {
+                            const scelte = valModifiche[v.id] || {};
+                            return (
+                                <Box key={v.id} padding="space.150" backgroundColor="color.background.neutral">
+                                    <Stack space="space.100">
+                                        <Inline space="space.100" alignBlock="center" shouldWrap>
+                                            <Text font={{ weight: 'bold' }}>{v.nome}</Text>
+                                            <Text>— {v.issueKey || 'ticket n/d'}</Text>
+                                            <Lozenge>proposti: {(v.puntiProposti / 10)} pt</Lozenge>
+                                        </Inline>
+
+                                        <Text>Risoluzione</Text>
+                                        <Select
+                                            options={OPZIONI_RISOLUZIONE}
+                                            value={OPZIONI_RISOLUZIONE.find((o) => o.value === scelte.risoluzione) || null}
+                                            onChange={(o) => setScelta(v.id, 'risoluzione', o ? o.value : null)}
+                                        />
+                                        <Text>Documentazione</Text>
+                                        <Select
+                                            options={OPZIONI_DOCUMENTAZIONE}
+                                            value={OPZIONI_DOCUMENTAZIONE.find((o) => o.value === scelte.documentazione) || null}
+                                            onChange={(o) => setScelta(v.id, 'documentazione', o ? o.value : null)}
+                                        />
+                                        <Text>Feedback</Text>
+                                        <Select
+                                            options={OPZIONI_FEEDBACK}
+                                            value={OPZIONI_FEEDBACK.find((o) => o.value === scelte.feedback) || null}
+                                            onChange={(o) => setScelta(v.id, 'feedback', o ? o.value : null)}
+                                        />
+
+                                        <Inline space="space.100">
+                                            <Button
+                                                appearance="primary"
+                                                isDisabled={inCorso}
+                                                onClick={() => handleConfermaVal(v)}
+                                            >
+                                                ✅ Conferma e assegna punti
+                                            </Button>
+                                            <Button
+                                                appearance="danger"
+                                                isDisabled={inCorso}
+                                                onClick={() => handleRifiutaVal(v)}
+                                            >
+                                                ❌ Rifiuta
+                                            </Button>
+                                        </Inline>
+                                    </Stack>
+                                </Box>
+                            );
+                        })}
                     </Stack>
                 )}
             </Stack>
