@@ -10,6 +10,23 @@ const TEAM = [
     { nome: "Lidia", accountId: "712020:5930294d-413c-434a-ae40-db82633bff30" },
 ];
 
+// Stati che contano come COMPLETAMENTO riuscito → assegnano punti.
+// Coprono i 3 workflow: standard (DONE), incident (RESOLVED), service request (CLOSED COMPLETED).
+// I nomi vanno in minuscolo, perché li confrontiamo con statoAttuale già lowercased.
+// NON incluse volutamente: 'canceled', 'closed skipped', 'closed incompleted'
+// (terminali ma non successi → nessun punto). Sposta qui se decidi il contrario.
+const STATI_COMPLETAMENTO = new Set([
+    'done',
+    'resolved',
+    'closed completed',
+]);
+
+// Stati "in lavorazione": avviano il timer antifarming, nessun punto.
+// ON HOLD e PENDING restano fuori: sono pause, non lavorazione attiva.
+const STATI_IN_LAVORAZIONE = new Set([
+    'in progress',
+]);
+
 export const handler = async (event, context) => {
     const stato = await controllaStagione(TEAM);
 
@@ -44,8 +61,15 @@ export const handler = async (event, context) => {
 
     console.log(`Ticket ${issue.key}: ${statoPreced} → ${statoAttuale} (assignee: ${membroTeam.nome})`);
 
-    // Ticket passato a Done → controllo antifarming + 3 punti + incrementa contatore
-    if (statoAttuale === 'done') {
+    // Un solo posto dove si decide "è un completamento?", valido per tutti e 3 i workflow.
+    const eraCompletato = STATI_COMPLETAMENTO.has(statoPreced);
+    const oraCompletato = STATI_COMPLETAMENTO.has(statoAttuale);
+
+    // Entrato in un completamento (DONE / RESOLVED / CLOSED COMPLETED) da uno stato
+    // NON completato → controllo antifarming + punti + incrementa contatore.
+    // La guardia !eraCompletato evita il doppio conteggio se si passa da un verde
+    // all'altro (es. RESOLVED → CLOSED COMPLETED): là non si ri-assegnano punti.
+    if (oraCompletato && !eraCompletato) {
         // Il controllo NON blocca i punti: segnala e basta (scelta di design).
         const { flags, secondiInProgress } = await controllaChiusura(issue.key, statoPreced);
 
@@ -60,26 +84,27 @@ export const handler = async (event, context) => {
         }
 
         const punti = await getPuntiPerTicket();
-        await aggiungiPunti(assigneeId, punti);        // era: aggiungiPunti(assigneeId, 3)
+        await aggiungiPunti(assigneeId, punti);
         const ticketAttuali = await kvs.get(`ticket-stagione-${assigneeId}`) || 0;
         await kvs.set(`ticket-stagione-${assigneeId}`, ticketAttuali + 1);
-        console.log(`+3 punti a ${membroTeam.nome} (ticket stagione: ${ticketAttuali + 1})`);
+        console.log(`+${punti} punti a ${membroTeam.nome} (ticket stagione: ${ticketAttuali + 1})`);
         return;
     }
 
-    // Ticket riaperto da Done → -3 punti + decrementa contatore
-    // ATTENZIONE all'ordine: questo ramo cattura anche Done → In Progress, quindi
-    // deve stare PRIMA del ramo In Progress, altrimenti la riapertura salterebbe il -3.
-    if (statoPreced === 'done' && statoAttuale !== 'done') {
+    // Uscito da un completamento verso uno stato NON completato → riapertura:
+    // -punti + decrementa contatore. Cattura anche i casi "verde → annullato/saltato"
+    // (RESOLVED → CANCELED, CLOSED COMPLETED → CLOSED SKIPPED): il punto va tolto.
+    // ATTENZIONE all'ordine: sta PRIMA del ramo In Progress, altrimenti una riapertura
+    // verso In Progress salterebbe la sottrazione.
+    if (eraCompletato && !oraCompletato) {
         const punti = await getPuntiPerTicket();
-        await aggiungiPunti(assigneeId, -punti);       // era: aggiungiPunti(assigneeId, -3)
+        await aggiungiPunti(assigneeId, -punti);
         const ticketAttuali = await kvs.get(`ticket-stagione-${assigneeId}`) || 0;
         await kvs.set(`ticket-stagione-${assigneeId}`, Math.max(0, ticketAttuali - 1));
-        console.log(`-3 punti a ${membroTeam.nome} (ticket stagione: ${Math.max(0, ticketAttuali - 1)})`);
+        console.log(`-${punti} punti a ${membroTeam.nome} (ticket stagione: ${Math.max(0, ticketAttuali - 1)})`);
 
         // Se la riapertura porta il ticket in lavorazione, il timer riparte da adesso.
-        // Una richiusura rapida verrà quindi segnalata, ed è voluto.
-        if (statoAttuale === 'in progress') {
+        if (STATI_IN_LAVORAZIONE.has(statoAttuale)) {
             await registraInProgress(issue.key);
         } else {
             await pulisciInProgress(issue.key);
@@ -87,16 +112,15 @@ export const handler = async (event, context) => {
         return;
     }
 
-    // Ticket entrato in In Progress (non da Done, quel caso è gestito sopra)
-    // → avvia il timer. Nessun punto assegnato.
-    if (statoAttuale === 'in progress') {
+    // Entrato in lavorazione (non da un completamento, gestito sopra) → avvia il timer.
+    if (STATI_IN_LAVORAZIONE.has(statoAttuale)) {
         await registraInProgress(issue.key);
         return;
     }
 
-    // Ticket uscito da In Progress verso uno stato che non è Done
-    // (es. rimandato in To Do) → il timer non ha più senso, lo azzeriamo.
-    if (statoPreced === 'in progress') {
+    // Uscito dalla lavorazione verso uno stato non completato (es. ON HOLD, PENDING,
+    // di nuovo OPEN) → il timer non ha più senso, lo azzeriamo.
+    if (STATI_IN_LAVORAZIONE.has(statoPreced)) {
         await pulisciInProgress(issue.key);
         return;
     }
