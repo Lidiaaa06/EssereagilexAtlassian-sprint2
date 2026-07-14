@@ -1,8 +1,7 @@
 import { kvs } from '@forge/kvs';
 
 // Supervisore hardcoded di default
-const SUPERVISORE_DEFAULT = '712020:a4ccdea1-0bb3-408f-9623-93c19691d980'; // Roberto
-
+const SUPERVISORE_DEFAULT = '712020:5930294d-413c-434a-ae40-db82633bff30'; // Lidia
 // Inizializza i ruoli se non esistono
 const inizializzaRuoli = async (TEAM) => {
     const ruoli = await kvs.get('ruoli');
