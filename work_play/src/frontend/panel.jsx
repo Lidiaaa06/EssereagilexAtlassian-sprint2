@@ -25,8 +25,14 @@ const Panel = () => {
         });
     };
 
+    const [erroreHOF, setErroreHOF] = useState(null);
+
     const handleHallOfFame = () => {
-        invoke('aggiungiHallOfFame', { issueKey }).then(() => {
+        invoke('richiediHallOfFame', { issueKey }).then((res) => {
+            if (res && res.errore) {
+                setErroreHOF(res.errore);
+                return;
+            }
             setAggiuntoHOF(true);
         });
     };
@@ -41,11 +47,14 @@ const Panel = () => {
             {/* Sezione Hall of Fame */}
             <Heading>🏛️ Hall of Fame</Heading>
             {aggiuntoHOF ? (
-                <Text>✅ Ticket aggiunto alla Hall of Fame!</Text>
+                <Text>✅ Richiesta inviata! In attesa di approvazione del supervisore.</Text>
             ) : (
-                <Button appearance="warning" onClick={handleHallOfFame}>
-                    🏛️ Aggiungi alla Hall of Fame
-                </Button>
+                <Stack space="space.100">
+                    <Button appearance="warning" onClick={handleHallOfFame}>
+                        🏛️ Richiedi inserimento in Hall of Fame
+                    </Button>
+                    {erroreHOF && <Text>⚠️ {erroreHOF}</Text>}
+                </Stack>
             )}
 
             {/* Sezione Valutazione */}

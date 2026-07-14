@@ -144,6 +144,8 @@ const AdminPage = () => {
     const [inCorso, setInCorso] = useState(false);
     // Valore configurabile: punti assegnati a ogni ticket completato
     const [puntiPerTicket, setPuntiPerTicket] = useState('3');
+    // Richieste di inserimento in Hall of Fame, in attesa di approvazione
+    const [richiesteHOF, setRichiesteHOF] = useState([]);
 
     useEffect(() => {
         caricaDati();
@@ -155,11 +157,13 @@ const AdminPage = () => {
             invoke('getAdminData'),
             invoke('getSegnalazioni'),
             invoke('getConfigPunti'),
-        ]).then(([adminData, risultatoSegnalazioni, config]) => {
+            invoke('getRichiesteHallOfFame'),
+        ]).then(([adminData, risultatoSegnalazioni, config, risultatoHOF]) => {
             setData(adminData);
             // Se l'utente non è supervisore il resolver risponde { errore }
             setSegnalazioni(risultatoSegnalazioni.segnalazioni || []);
             setPuntiPerTicket(String(config.puntiPerTicket));
+            setRichiesteHOF(risultatoHOF.richieste || []);
             return adminData;
         });
     };
@@ -235,6 +239,22 @@ const AdminPage = () => {
             'setConfigPunti',
             { puntiPerTicket: Number(puntiPerTicket) },
             `Punti per ticket impostati a ${puntiPerTicket}.`
+        );
+    };
+
+    const handleApprovaHOF = (r) => {
+        eseguiAzione(
+            'approvaRichiestaHOF',
+            { issueKey: r.id },
+            `${r.id} aggiunto alla Hall of Fame.`
+        );
+    };
+
+    const handleRifiutaHOF = (r) => {
+        eseguiAzione(
+            'rifiutaRichiestaHOF',
+            { issueKey: r.id },
+            `Richiesta su ${r.id} rifiutata.`
         );
     };
 
@@ -397,6 +417,56 @@ const AdminPage = () => {
                         Salva
                     </Button>
                 </Inline>
+            </Stack>
+
+            {/* --- Richieste Hall of Fame --- */}
+            <Stack space="space.100">
+                <Inline space="space.100" alignBlock="center">
+                    <Heading>🏛️ Richieste Hall of Fame</Heading>
+                    {richiesteHOF.length > 0 && (
+                        <Lozenge appearance="new">{richiesteHOF.length} da valutare</Lozenge>
+                    )}
+                </Inline>
+
+                {richiesteHOF.length === 0 ? (
+                    <Text>Nessuna richiesta in attesa. 👍</Text>
+                ) : (
+                    <Stack space="space.100">
+                        {richiesteHOF.map((r) => (
+                            <Box
+                                key={r.id}
+                                padding="space.150"
+                                backgroundColor="color.background.neutral"
+                            >
+                                <Stack space="space.050">
+                                    <Inline space="space.100" alignBlock="center" shouldWrap>
+                                        <Text font={{ weight: 'bold' }}>{r.id}</Text>
+                                        <Text>— {r.titolo}</Text>
+                                    </Inline>
+                                    <Text>👤 Completato da: {r.assignee}</Text>
+                                    <Text>➕ Proposto da: {r.aggiuntoDA}</Text>
+                                    <Text>{r.descrizione}</Text>
+                                    <Inline space="space.100">
+                                        <Button
+                                            appearance="primary"
+                                            isDisabled={inCorso}
+                                            onClick={() => handleApprovaHOF(r)}
+                                        >
+                                            ✅ Approva
+                                        </Button>
+                                        <Button
+                                            appearance="danger"
+                                            isDisabled={inCorso}
+                                            onClick={() => handleRifiutaHOF(r)}
+                                        >
+                                            ❌ Nega
+                                        </Button>
+                                    </Inline>
+                                </Stack>
+                            </Box>
+                        ))}
+                    </Stack>
+                )}
             </Stack>
 
             {/* --- Gestione ruolo --- */}

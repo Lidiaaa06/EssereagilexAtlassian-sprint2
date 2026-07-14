@@ -1,31 +1,61 @@
 import { kvs } from '@forge/kvs';
 
-// Aggiungi un ticket alla Hall of Fame
-export const aggiungiHallOfFame = async (issueKey, issueData, aggiuntoDA) => {
+// Crea una RICHIESTA di inserimento in Hall of Fame (in attesa di approvazione).
+// Non inserisce diretto: la voce resta in 'halloffame-richieste' finché il
+// supervisore non approva o rifiuta.
+export const richiediHallOfFame = async (issueKey, issueData, richiedenteDA) => {
+    const richieste = await kvs.get('halloffame-richieste') || [];
     const halloffame = await kvs.get('halloffame') || [];
 
-    // Controlla se il ticket è già presente
-    if (halloffame.find(t => t.id === issueKey)) return halloffame;
+    // Evita doppioni: già in Hall of Fame, oppure richiesta già inviata.
+    if (halloffame.find(t => t.id === issueKey)) return { errore: 'Ticket già in Hall of Fame' };
+    if (richieste.find(t => t.id === issueKey)) return { errore: 'Richiesta già inviata, in attesa di approvazione' };
 
-    const nuovoTicket = {
+    const nuovaRichiesta = {
         id: issueKey,
         titolo: issueData.titolo,
         descrizione: issueData.descrizione,
         assignee: issueData.assignee,
         assigneeId: issueData.assigneeId,
-        aggiuntoDA,
+        aggiuntoDA: richiedenteDA,
         data: Date.now(),
-        reactions: {
-            fuoco: [],
-            cervello: [],
-            fulmine: [],
-            trofeo: []
-        },
-        commenti: []
     };
 
-    await kvs.set('halloffame', [...halloffame, nuovoTicket]);
-    return await kvs.get('halloffame');
+    await kvs.set('halloffame-richieste', [...richieste, nuovaRichiesta]);
+    return { successo: true };
+};
+
+// Elenco delle richieste in attesa (uso riservato al supervisore, il check è nel resolver).
+export const getRichiesteHallOfFame = async () => {
+    return await kvs.get('halloffame-richieste') || [];
+};
+
+// Approva una richiesta: la sposta nella Hall of Fame vera, inizializzando
+// reactions e commenti vuoti, e la rimuove dalle richieste.
+export const approvaRichiesta = async (issueKey) => {
+    const richieste = await kvs.get('halloffame-richieste') || [];
+    const richiesta = richieste.find(t => t.id === issueKey);
+    if (!richiesta) return { errore: 'Richiesta non trovata' };
+
+    const halloffame = await kvs.get('halloffame') || [];
+    if (!halloffame.find(t => t.id === issueKey)) {
+        const nuovoTicket = {
+            ...richiesta,
+            reactions: { fuoco: [], cervello: [], fulmine: [], trofeo: [] },
+            commenti: [],
+        };
+        await kvs.set('halloffame', [...halloffame, nuovoTicket]);
+    }
+
+    await kvs.set('halloffame-richieste', richieste.filter(t => t.id !== issueKey));
+    return { successo: true };
+};
+
+// Nega una richiesta: la rimuove senza inserirla in Hall of Fame.
+export const rifiutaRichiesta = async (issueKey) => {
+    const richieste = await kvs.get('halloffame-richieste') || [];
+    await kvs.set('halloffame-richieste', richieste.filter(t => t.id !== issueKey));
+    return { successo: true };
 };
 
 // Leggi tutti i ticket della Hall of Fame

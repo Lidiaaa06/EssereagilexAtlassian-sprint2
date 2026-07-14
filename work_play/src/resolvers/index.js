@@ -4,7 +4,7 @@ import { BADGES, getUserBadges, assignBadge, removeBadge } from './badges';
 import { SFIDE, getSfideUtente, accettaSfida, completaSfida, pulisciSfideScadute, getPuntiBonus } from './sfide';
 import { salvaValutazione, getPuntiValutazione } from './valutazione';
 import { getPuntiStagione, getPuntiLegacy, getNumeroStagione, getGiorniRimanenti, controllaStagione, getStatoStagioneTestuale, getTicketStagione, getRiepilogoStagione, getCountdownNuovaStagione, getPuntiPerTicket, setPuntiPerTicket } from './stagione';
-import { aggiungiHallOfFame, getHallOfFame, toggleReaction, aggiungiCommento, eliminaCommento } from './halloffame';
+import { richiediHallOfFame, getRichiesteHallOfFame, approvaRichiesta, rifiutaRichiesta, getHallOfFame, toggleReaction, aggiungiCommento, eliminaCommento } from './halloffame';
 import { aggiungiPensiero, getPensieri, toggleReactionPensiero, aggiungiCommentoPensiero, eliminaCommentoPensiero, eliminaPensiero, getStatoPensiero, resetLimiteGiornaliero } from './pensieri';
 import { getRuolo, getRuoli, isSupervisore, assegnaRuolo } from './ruoli';
 import { getSegnalazioni, marcaSegnalazioneVista } from './antifarming';
@@ -191,7 +191,8 @@ resolver.define('getClassifica', async () => {
   return await applicaCambioPosizione(classifica);
 });
 
-resolver.define('aggiungiHallOfFame', async ({ context, payload }) => {
+// L'operatore RICHIEDE l'inserimento: la voce resta in attesa di approvazione.
+resolver.define('richiediHallOfFame', async ({ context, payload }) => {
   const meResponse = await api.asUser().requestJira(
     route`/rest/api/3/myself`
   );
@@ -209,7 +210,31 @@ resolver.define('aggiungiHallOfFame', async ({ context, payload }) => {
     assigneeId: issue.fields.assignee?.accountId || null,
   };
 
-  return await aggiungiHallOfFame(payload.issueKey, issueData, me.displayName);
+  return await richiediHallOfFame(payload.issueKey, issueData, me.displayName);
+});
+
+// Elenco richieste in attesa (solo supervisore).
+resolver.define('getRichiesteHallOfFame', async () => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) return { errore: 'Non autorizzato' };
+  return { richieste: await getRichiesteHallOfFame() };
+});
+
+// Approva una richiesta (solo supervisore).
+resolver.define('approvaRichiestaHOF', async ({ payload }) => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) return { errore: 'Non autorizzato' };
+  return await approvaRichiesta(payload.issueKey);
+});
+
+// Nega una richiesta (solo supervisore).
+resolver.define('rifiutaRichiestaHOF', async ({ payload }) => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) return { errore: 'Non autorizzato' };
+  return await rifiutaRichiesta(payload.issueKey);
 });
 
 resolver.define('getHallOfFame', async ({ context }) => {
