@@ -32,6 +32,14 @@ modules:
       render: native
       resolver:
         function: resolver
+    - key: gamification-classifica-aiuto-gadget
+      title: Classifica Aiuto
+      description: Classifica del team basata sui punti aiuto.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: classifica-aiuto-res
+      render: native
+      resolver:
+        function: aiutoResolver
   jira:issuePanel:
     - key: gamification-classifica-user-issue-panel
       title: Valutazione & Hall of Fame
@@ -47,6 +55,13 @@ modules:
       render: native
       resolver:
         function: resolver
+    - key: gamification-classifica-aiuto-panel
+      title: Segnala Aiuto
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: segnala-aiuto-resource
+      render: native
+      resolver:
+        function: aiutoResolver
   jira:adminPage:
     - key: gamification-classifica-user-admin-page
       title: WorkPlay Admin
@@ -64,6 +79,8 @@ modules:
       handler: resolvers/index.handler
     - key: triggerHandler
       handler: resolvers/trigger.handler
+    - key: aiutoResolver
+      handler: resolvers/aiuto.handler
 resources:
   - key: main-resource
     path: src/frontend/index.jsx
@@ -79,6 +96,10 @@ resources:
     path: src/frontend/sfide-panel.jsx
   - key: admin-resource
     path: src/frontend/admin.jsx
+  - key: segnala-aiuto-resource
+    path: src/frontend/segnala-aiuto.jsx
+  - key: classifica-aiuto-res
+    path: src/frontend/classifica-aiuto.jsx
 permissions:
   scopes:
     - read:jira-work

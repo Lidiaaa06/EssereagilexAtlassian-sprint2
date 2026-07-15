@@ -168,6 +168,8 @@ const AdminPage = () => {
     const [inCorso, setInCorso] = useState(false);
     // Valore configurabile: punti assegnati a ogni ticket completato
     const [puntiPerTicket, setPuntiPerTicket] = useState('3');
+
+    const [puntiPerAiuto, setPuntiPerAiuto] = useState('10');
     // Richieste di inserimento in Hall of Fame, in attesa di approvazione
     const [richiesteHOF, setRichiesteHOF] = useState([]);
     // Autovalutazioni congelate in attesa di conferma
@@ -190,11 +192,13 @@ const AdminPage = () => {
             invoke('getRichiesteHallOfFame'),
             invoke('getValutazioniCongelate'),
             invoke('getConfigValutazione'),
-        ]).then(([adminData, risultatoSegnalazioni, config, risultatoHOF, risultatoVal, configVal]) => {
+            invoke('getConfigAiuto'),
+        ]).then(([adminData, risultatoSegnalazioni, config, risultatoHOF, risultatoVal, configVal, configAiuto]) => {
             setData(adminData);
             // Se l'utente non è supervisore il resolver risponde { errore }
             setSegnalazioni(risultatoSegnalazioni.segnalazioni || []);
             setPuntiPerTicket(String(config.puntiPerTicket));
+            setPuntiPerAiuto(String(configAiuto.puntiPerAiuto));
             setRichiesteHOF(risultatoHOF.richieste || []);
             const listaVal = risultatoVal.valutazioni || [];
             setValutazioni(listaVal);
@@ -302,6 +306,14 @@ const AdminPage = () => {
             'setConfigPunti',
             { puntiPerTicket: Number(puntiPerTicket) },
             `Punti per ticket impostati a ${puntiPerTicket}.`
+        );
+    };
+
+    const handleSalvaPuntiAiuto = () => {
+        eseguiAzione(
+            'setConfigAiuto',
+            { puntiPerAiuto: Number(puntiPerAiuto) },
+            `Punti per aiuto impostati a ${puntiPerAiuto}.`
         );
     };
 
@@ -536,6 +548,22 @@ const AdminPage = () => {
                         onChange={(e) => setPuntiPerTicket(e.target.value)}
                     />
                     <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaPunti}>
+                        Salva
+                    </Button>
+                </Inline>
+            </Stack>
+
+            {/* --- Punti per aiuto --- */}
+            <Stack space="space.100">
+                <Heading>🤝 Punti per aiuto</Heading>
+                <Text>Punti assegnati per ogni aiuto segnalato tra colleghi. Vale dalla prossima segnalazione.</Text>
+                <Inline space="space.100" alignBlock="center">
+                    <Textfield
+                        type="number"
+                        value={puntiPerAiuto}
+                        onChange={(e) => setPuntiPerAiuto(e.target.value)}
+                    />
+                    <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaPuntiAiuto}>
                         Salva
                     </Button>
                 </Inline>

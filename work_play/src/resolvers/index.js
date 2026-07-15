@@ -1,4 +1,5 @@
 import Resolver from '@forge/resolver';
+import { kvs } from '@forge/kvs';
 import api, { route } from '@forge/api';
 import { BADGES, getUserBadges, assignBadge, removeBadge } from './badges';
 import { SFIDE, getSfideUtente, accettaSfida, completaSfida, pulisciSfideScadute, getPuntiBonus } from './sfide';
@@ -524,6 +525,35 @@ resolver.define('setConfigPunti', async ({ payload }) => {
   }
   const val = await setPuntiPerTicket(payload.puntiPerTicket);
   return { successo: true, puntiPerTicket: val };
+});
+
+// ---------------------------------------------------------------------------
+// CONFIG PUNTI AIUTO — punti per ogni aiuto segnalato, modificabili dal supervisore
+// (stessa pagina WorkPlay Admin; i dati stanno nel blob KVS 'aiuto-dati')
+// ---------------------------------------------------------------------------
+
+resolver.define('getConfigAiuto', async () => {
+  const d = await kvs.get('aiuto-dati');
+  return { puntiPerAiuto: d?.config?.puntiPerAiuto ?? 10 };
+});
+
+resolver.define('setConfigAiuto', async ({ payload }) => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) {
+    return { errore: 'Non hai i permessi per modificare i punti aiuto' };
+  }
+  const val = Number(payload.puntiPerAiuto);
+  if (!Number.isFinite(val) || val < 0) {
+    return { errore: 'Valore non valido: inserisci un numero >= 0.' };
+  }
+  const d = await kvs.get('aiuto-dati');
+  await kvs.set('aiuto-dati', {
+    config: { puntiPerAiuto: val },
+    punti: d?.punti || {},
+    storico: Array.isArray(d?.storico) ? d.storico : [],
+  });
+  return { successo: true, puntiPerAiuto: val };
 });
 
 export const handler = resolver.getDefinitions();
