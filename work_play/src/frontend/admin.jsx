@@ -537,68 +537,6 @@ const AdminPage = () => {
                 )}
             </Stack>
 
-            {/* --- Punti per ticket --- */}
-            <Stack space="space.100">
-                <Heading>🎯 Punti per ticket</Heading>
-                <Text>Punti assegnati a ogni task completata. Vale dal prossimo aggiornamento.</Text>
-                <Inline space="space.100" alignBlock="center">
-                    <Textfield
-                        type="number"
-                        value={puntiPerTicket}
-                        onChange={(e) => setPuntiPerTicket(e.target.value)}
-                    />
-                    <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaPunti}>
-                        Salva
-                    </Button>
-                </Inline>
-            </Stack>
-
-            {/* --- Punti per aiuto --- */}
-            <Stack space="space.100">
-                <Heading>🤝 Punti per aiuto</Heading>
-                <Text>Punti assegnati per ogni aiuto segnalato tra colleghi. Vale dalla prossima segnalazione.</Text>
-                <Inline space="space.100" alignBlock="center">
-                    <Textfield
-                        type="number"
-                        value={puntiPerAiuto}
-                        onChange={(e) => setPuntiPerAiuto(e.target.value)}
-                    />
-                    <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaPuntiAiuto}>
-                        Salva
-                    </Button>
-                </Inline>
-            </Stack>
-
-            {/* --- Punteggi valutazione (griglia configurabile) --- */}
-            {puntiVal && (
-                <Stack space="space.100">
-                    <Heading>⚖️ Punteggi autovalutazione</Heading>
-                    <Text>Punti reali per ogni scelta dell'autovalutazione. Ammessi decimali e negativi.</Text>
-                    {GRIGLIA_VAL.map((sez) => (
-                        <Stack key={sez.gruppo} space="space.050">
-                            <Text font={{ weight: 'bold' }}>{sez.titolo}</Text>
-                            <Inline space="space.200" shouldWrap>
-                                {sez.voci.map(([chiave, etichetta]) => (
-                                    <Stack key={chiave} space="space.050">
-                                        <Text>{etichetta}</Text>
-                                        <Textfield
-                                            type="number"
-                                            value={puntiVal[sez.gruppo][chiave]}
-                                            onChange={(e) => setPuntoVal(sez.gruppo, chiave, e.target.value)}
-                                        />
-                                    </Stack>
-                                ))}
-                            </Inline>
-                        </Stack>
-                    ))}
-                    <Inline>
-                        <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaPuntiVal}>
-                            Salva punteggi valutazione
-                        </Button>
-                    </Inline>
-                </Stack>
-            )}
-
             {/* --- Richieste Hall of Fame --- */}
             <Stack space="space.100">
                 <Inline space="space.100" alignBlock="center">

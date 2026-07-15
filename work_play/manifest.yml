@@ -1,4 +1,11 @@
 modules:
+  jira:globalPage:
+    - key: gamification-config-punteggi-page
+      title: Configurazione Punteggi
+      resource: config-punteggi-res
+      render: native
+      resolver:
+        function: resolver
   jira:dashboardGadget:
     - key: gamification-classifica-user-dashboard-gadget-ui-kit-2-hello-world-gadget
       title: Gamification - Profilo
@@ -100,6 +107,8 @@ resources:
     path: src/frontend/segnala-aiuto.jsx
   - key: classifica-aiuto-res
     path: src/frontend/classifica-aiuto.jsx
+  - key: config-punteggi-res
+    path: src/frontend/config-punteggi.jsx
 permissions:
   scopes:
     - read:jira-work
