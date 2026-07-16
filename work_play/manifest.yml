@@ -1,83 +1,83 @@
 modules:
   jira:globalPage:
-    - key: gamification-config-punteggi-page
-      title: Configurazione Punteggi
-      resource: config-punteggi-res
+    - key: gamification-config-punteggi-page-lidia
+      title: Configurazione Punteggi - Lidia
+      resource: config-punt-res-lidia
       render: native
       resolver:
         function: resolver
   jira:dashboardGadget:
-    - key: gamification-classifica-user-dashboard-gadget-ui-kit-2-hello-world-gadget
-      title: Gamification - Profilo
+    - key: gamification-classifica-user-dashboard-gadget-ui-kit-2-hello-world-gadget-lidia
+      title: Gamification - Profilo - Lidia
       description: Profilo gamification dell'utente.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: main-resource
+      resource: main-resource-lidia
       render: native
       resolver:
         function: resolver
-    - key: gamification-classifica-user-classifica-gadget
-      title: Classifica Team - Gamification
+    - key: gamification-classifica-user-classifica-gadget-lidia
+      title: Classifica Team - Gamification - Lidia
       description: Classifica del team basata sui punti.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: classifica-resource
+      resource: classifica-res-lidia
       render: native
       resolver:
         function: resolver
-    - key: gamification-classifica-user-halloffame-gadget
-      title: Hall of Fame
+    - key: gamification-classifica-user-halloffame-gadget-lidia
+      title: Hall of Fame - Lidia
       description: I ticket più memorabili del team.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: halloffame-resource
+      resource: halloffame-res-lidia
       render: native
       resolver:
         function: resolver
-    - key: gamification-classifica-user-pensieri-gadget
-      title: Pensieri di fine giornata
+    - key: gamification-classifica-user-pensieri-gadget-lidia
+      title: Pensieri di fine giornata - Lidia
       description: Condividi i tuoi pensieri con il team.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: pensieri-resource
+      resource: pensieri-resource-lidia
       render: native
       resolver:
         function: resolver
-    - key: gamification-classifica-aiuto-gadget
-      title: Classifica Aiuto
+    - key: gamification-classifica-aiuto-gadget-lidia
+      title: Classifica Aiuto - Lidia
       description: Classifica del team basata sui punti aiuto.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: classifica-aiuto-res
+      resource: classif-aiuto-res-lidia
       render: native
       resolver:
         function: aiutoResolver
   jira:issuePanel:
-    - key: gamification-classifica-user-issue-panel
-      title: Valutazione & Hall of Fame
+    - key: gamification-classifica-user-issue-panel-lidia
+      title: Valutazione & Hall of Fame - Lidia
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: panel-resource
+      resource: panel-resource-lidia
       render: native
       resolver:
         function: resolver
-    - key: gamification-classifica-user-sfide-panel
-      title: Sfide Attive
+    - key: gamification-classifica-user-sfide-panel-lidia
+      title: Sfide Attive - Lidia
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: sfide-panel-resource
+      resource: sfide-panel-res-lidia
       render: native
       resolver:
         function: resolver
-    - key: gamification-classifica-aiuto-panel
-      title: Segnala Aiuto
+    - key: gamification-classifica-aiuto-panel-lidia
+      title: Segnala Aiuto - Lidia
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: segnala-aiuto-resource
+      resource: segnala-aiuto-res-lidia
       render: native
       resolver:
         function: aiutoResolver
   jira:adminPage:
-    - key: gamification-classifica-user-admin-page
-      title: WorkPlay Admin
-      resource: admin-resource
+    - key: gamification-classifica-user-admin-page-lidia
+      title: WorkPlay Admin - Lidia
+      resource: admin-resource-lidia
       render: native
       resolver:
         function: resolver
   trigger:
-    - key: ticket-done-trigger
+    - key: ticket-done-trigger-lidia
       function: triggerHandler
       events:
         - avi:jira:updated:issue
@@ -89,26 +89,26 @@ modules:
     - key: aiutoResolver
       handler: resolvers/aiuto.handler
 resources:
-  - key: main-resource
-    path: src/frontend/index.jsx
-  - key: panel-resource
-    path: src/frontend/panel.jsx
-  - key: classifica-resource
-    path: src/frontend/classifica.jsx
-  - key: halloffame-resource
-    path: src/frontend/halloffame.jsx
-  - key: pensieri-resource
-    path: src/frontend/pensieri.jsx
-  - key: sfide-panel-resource
-    path: src/frontend/sfide-panel.jsx
-  - key: admin-resource
-    path: src/frontend/admin.jsx
-  - key: segnala-aiuto-resource
-    path: src/frontend/segnala-aiuto.jsx
-  - key: classifica-aiuto-res
-    path: src/frontend/classifica-aiuto.jsx
-  - key: config-punteggi-res
-    path: src/frontend/config-punteggi.jsx
+  - key: main-resource-lidia
+    path: src/frontend/index-lidia.jsx
+  - key: panel-resource-lidia
+    path: src/frontend/panel-lidia.jsx
+  - key: classifica-res-lidia
+    path: src/frontend/classifica-lidia.jsx
+  - key: halloffame-res-lidia
+    path: src/frontend/halloffame-lidia.jsx
+  - key: pensieri-resource-lidia
+    path: src/frontend/pensieri-lidia.jsx
+  - key: sfide-panel-res-lidia
+    path: src/frontend/sfide-panel-lidia.jsx
+  - key: admin-resource-lidia
+    path: src/frontend/admin-lidia.jsx
+  - key: segnala-aiuto-res-lidia
+    path: src/frontend/segnala-aiuto-lidia.jsx
+  - key: classif-aiuto-res-lidia
+    path: src/frontend/classifica-aiuto-lidia.jsx
+  - key: config-punt-res-lidia
+    path: src/frontend/config-punteggi-lidia.jsx
 permissions:
   scopes:
     - read:jira-work

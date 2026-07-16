@@ -1,25 +1,25 @@
 modules:
   jira:dashboardGadget:
-    - key: barra-punti-stagionali-dashboard-gadget
-      title: Barra punti stagionali
+    - key: barra-punti-stagionali-dashboard-gadget-lidia
+      title: Barra punti stagionali - Lidia
       description: Mostra le task completate dall'utente nella stagione corrente.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: main-resource
+      resource: main-resource-lidia
       render: native
       resolver:
         function: resolver
 
   jira:issuePanel:
-    - key: golden-ticket-panel
-      title: Golden Ticket
+    - key: golden-ticket-panel-lidia
+      title: Golden Ticket - Lidia
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: golden-ticket-ui
+      resource: golden-ticket-ui-lidia
       render: native
       resolver:
         function: resolver
 
   trigger:
-    - key: task-completed-trigger
+    - key: task-completed-trigger-lidia
       function: onIssueUpdated
       events:
         - avi:jira:updated:issue
@@ -31,10 +31,10 @@ modules:
       handler: index.issueUpdatedHandler
 
 resources:
-  - key: main-resource
-    path: src/frontend/index.jsx
-  - key: golden-ticket-ui
-    path: src/frontend/goldenTicket.jsx
+  - key: main-resource-lidia
+    path: src/frontend/index-lidia.jsx
+  - key: golden-ticket-ui-lidia
+    path: src/frontend/goldenTicket-lidia.jsx
 
 permissions:
   scopes:

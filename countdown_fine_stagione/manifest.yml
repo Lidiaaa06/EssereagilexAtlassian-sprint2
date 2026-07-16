@@ -1,10 +1,10 @@
 modules:
   jira:dashboardGadget:
-    - key: countdown-fine-stagione-dashboard-gadget
-      title: Countdown fine stagione
+    - key: countdown-fine-stagione-dashboard-gadget-lidia
+      title: Countdown fine stagione - Lidia
       description: Mostra il tempo rimanente alla fine della stagione.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: main-resource
+      resource: main-resource-lidia
       render: native
       resolver:
         function: resolver
@@ -14,8 +14,8 @@ modules:
       handler: index.handler
 
 resources:
-  - key: main-resource
-    path: src/frontend/index.jsx
+  - key: main-resource-lidia
+    path: src/frontend/index-lidia.jsx
 
 app:
   runtime:

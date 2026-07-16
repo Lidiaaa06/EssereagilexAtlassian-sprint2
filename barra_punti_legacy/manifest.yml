@@ -4,16 +4,16 @@ app:
 
 modules:
   jira:dashboardGadget:
-    - key: barra-punti-permanenti
-      title: Barra Punti Legacy
+    - key: barra-punti-permanenti-lidia
+      title: Barra Punti Legacy - Lidia
       description: Mostra i punti totali accumulati a vita dall'utente, senza reset stagionale.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: main-resource
+      resource: main-resource-lidia
       render: native
       resolver: { function: resolver }
 
   trigger:
-    - key: task-completed-trigger
+    - key: task-completed-trigger-lidia
       function: onIssueUpdated
       events:
         - avi:jira:updated:issue
@@ -25,8 +25,8 @@ modules:
       handler: index.issueUpdatedHandler
 
 resources:
-  - key: main-resource
-    path: src/frontend/index.jsx
+  - key: main-resource-lidia
+    path: src/frontend/index-lidia.jsx
 
 permissions:
   scopes: [read:jira-work, storage:app]

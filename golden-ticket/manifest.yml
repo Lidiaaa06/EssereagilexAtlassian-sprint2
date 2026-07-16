@@ -1,18 +1,18 @@
 modules:
   jira:issuePanel:
-    - key: golden-ticket-hello-world-issue-panel
-      resource: main
+    - key: golden-ticket-hello-world-issue-panel-lidia
+      resource: main-lidia
       resolver:
         function: resolver
       render: native
-      title: Golden Ticket
+      title: Golden Ticket - Lidia
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
   function:
     - key: resolver
       handler: index.handler
 resources:
-  - key: main
-    path: src/frontend/index.jsx
+  - key: main-lidia
+    path: src/frontend/index-lidia.jsx
 app:
   runtime:
     name: nodejs24.x

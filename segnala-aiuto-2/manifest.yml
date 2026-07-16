@@ -1,19 +1,19 @@
 modules:
   jira:issuePanel:
-    - key: segnala-aiuto-2-hello-world-issue-panel
-      resource: main
+    - key: segnala-aiuto-2-hello-world-issue-panel-lidia
+      resource: main-lidia
       resolver:
         function: resolver
       render: native
-      title: Segnala Aiuto
+      title: Segnala Aiuto - Lidia
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
 
   jira:dashboardGadget:
-    - key: segnala-aiuto-classifica-gadget
-      title: Classifica Aiuto
+    - key: segnala-aiuto-classifica-gadget-lidia
+      title: Classifica Aiuto - Lidia
       description: Classifica basata sui punti aiuto.
       thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
-      resource: classifica-resource
+      resource: classifica-res-lidia
       render: native
       resolver:
         function: resolver
@@ -23,10 +23,10 @@ modules:
       handler: index.handler
 
 resources:
-  - key: main
-    path: src/frontend/index.jsx
-  - key: classifica-resource
-    path: src/frontend/classifica.jsx
+  - key: main-lidia
+    path: src/frontend/index-lidia.jsx
+  - key: classifica-res-lidia
+    path: src/frontend/classifica-lidia.jsx
 
 permissions:
   scopes:
