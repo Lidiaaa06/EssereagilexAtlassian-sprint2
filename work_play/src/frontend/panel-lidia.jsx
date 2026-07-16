@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import ForgeReconciler, { Text, Heading, Stack, Button, RadioGroup } from '@forge/react';
 import { invoke } from '@forge/bridge';
 
+// Chiavi fisse delle opzioni per gruppo: il TESTO (domanda ed etichette) è
+// configurabile dal supervisore, ma il numero di domande/opzioni resta fisso.
+const CHIAVI_OPZIONI = {
+    risoluzione: ['autonomia', 'collega', 'manager'],
+    documentazione: ['corretta', 'errata', 'nessuna'],
+    feedback: ['positivo', 'negativo', 'nessuno'],
+};
+
 const Panel = () => {
     const [risoluzione, setRisoluzione] = useState(null);
     const [documentazione, setDocumentazione] = useState(null);
@@ -12,6 +20,8 @@ const Panel = () => {
     // Stato valutazione su questo ticket: undefined = caricamento, null = non valutato,
     // altrimenti 'congelata' | 'confermata' | 'modificata' | 'rifiutata'
     const [statoVal, setStatoVal] = useState(undefined);
+    // Domande ed etichette configurate dal supervisore (null finché non caricate)
+    const [testi, setTesti] = useState(null);
 
     useEffect(() => {
         invoke('getIssueStatus').then(result => {
@@ -21,6 +31,7 @@ const Panel = () => {
                 setStatoVal(r.stato);
             });
         });
+        invoke('getTestiValutazione').then(r => setTesti(r.testi));
     }, []);
 
     const handleSubmit = () => {
@@ -86,40 +97,39 @@ const Panel = () => {
                     <Heading>❌ Autovalutazione non approvata</Heading>
                     <Text>Il supervisore non ha approvato questa autovalutazione. Nessun punto è stato assegnato.</Text>
                 </Stack>
+            ) : !testi ? (
+                <Text>Caricamento domande...</Text>
             ) : (
                 <Stack space="space.200">
                     <Heading>📋 Valutazione ticket (Rispondi sinceramente, il ticket verrà riesaminato dal tuo supervisore)</Heading>
 
-                    <Text>Come hai risolto il ticket?</Text>
+                    <Text>{testi.risoluzione.domanda}</Text>
                     <RadioGroup
                         name="risoluzione"
-                        options={[
-                            { label: '🧠 In autonomia ', value: 'autonomia' },
-                            { label: '🤝 Con aiuto di un collega ', value: 'collega' },
-                            { label: '👔 Con aiuto del manager', value: 'manager' },
-                        ]}
+                        options={CHIAVI_OPZIONI.risoluzione.map((chiave) => ({
+                            label: testi.risoluzione.opzioni[chiave],
+                            value: chiave,
+                        }))}
                         onChange={(e) => setRisoluzione(e.target.value)}
                     />
 
-                    <Text>Hai documentato la soluzione?</Text>
+                    <Text>{testi.documentazione.domanda}</Text>
                     <RadioGroup
                         name="documentazione"
-                        options={[
-                            { label: '✅ Sì, correttamente ', value: 'corretta' },
-                            { label: '⚠️ Sì, ma in modo errato ', value: 'errata' },
-                            { label: '❌ No ', value: 'nessuna' },
-                        ]}
+                        options={CHIAVI_OPZIONI.documentazione.map((chiave) => ({
+                            label: testi.documentazione.opzioni[chiave],
+                            value: chiave,
+                        }))}
                         onChange={(e) => setDocumentazione(e.target.value)}
                     />
 
-                    <Text>Il cliente ha dato feedback?</Text>
+                    <Text>{testi.feedback.domanda}</Text>
                     <RadioGroup
                         name="feedback"
-                        options={[
-                            { label: '😊 Positivo', value: 'positivo' },
-                            { label: '😞 Negativo', value: 'negativo' },
-                            { label: '😐 Nessun feedback', value: 'nessuno' },
-                        ]}
+                        options={CHIAVI_OPZIONI.feedback.map((chiave) => ({
+                            label: testi.feedback.opzioni[chiave],
+                            value: chiave,
+                        }))}
                         onChange={(e) => setFeedback(e.target.value)}
                     />
 

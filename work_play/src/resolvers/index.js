@@ -3,7 +3,7 @@ import { kvs } from '@forge/kvs';
 import api, { route } from '@forge/api';
 import { BADGES, getUserBadges, assignBadge, removeBadge } from './badges';
 import { SFIDE, getSfideUtente, accettaSfida, completaSfida, pulisciSfideScadute, getPuntiBonus } from './sfide';
-import { salvaValutazione, getPuntiValutazione, getValutazioniCongelate, confermaValutazione, rifiutaValutazione, getPuntiValutazioneConfig, setPuntiValutazioneConfig, getStatoValutazione } from './valutazione';
+import { salvaValutazione, getPuntiValutazione, getValutazioniCongelate, confermaValutazione, rifiutaValutazione, getPuntiValutazioneConfig, setPuntiValutazioneConfig, getStatoValutazione, getTestiValutazioneConfig, setTestiValutazioneConfig } from './valutazione';
 import { getPuntiStagione, getPuntiLegacy, getNumeroStagione, getGiorniRimanenti, controllaStagione, getStatoStagioneTestuale, getTicketStagione, getRiepilogoStagione, getCountdownNuovaStagione, getPuntiPerTicket, setPuntiPerTicket } from './stagione';
 import { richiediHallOfFame, getRichiesteHallOfFame, approvaRichiesta, rifiutaRichiesta, getHallOfFame, toggleReaction, aggiungiCommento, eliminaCommento } from './halloffame';
 import { aggiungiPensiero, getPensieri, toggleReactionPensiero, aggiungiCommentoPensiero, eliminaCommentoPensiero, eliminaPensiero, getStatoPensiero, resetLimiteGiornaliero } from './pensieri';
@@ -182,6 +182,20 @@ resolver.define('setConfigValutazione', async ({ payload }) => {
   if (!await isSupervisore(me.accountId, TEAM)) return { errore: 'Non autorizzato' };
   const config = await setPuntiValutazioneConfig(payload.config);
   return { successo: true, config };
+});
+
+// Testi (domanda + etichette) della griglia valutazione. Lettura libera: serve al panel operatore.
+resolver.define('getTestiValutazione', async () => {
+  return { testi: await getTestiValutazioneConfig() };
+});
+
+// Salvataggio testi valutazione (solo supervisore).
+resolver.define('setTestiValutazione', async ({ payload }) => {
+  const meResponse = await api.asUser().requestJira(route`/rest/api/3/myself`);
+  const me = await meResponse.json();
+  if (!await isSupervisore(me.accountId, TEAM)) return { errore: 'Non autorizzato' };
+  const testi = await setTestiValutazioneConfig(payload.testi);
+  return { successo: true, testi };
 });
 
 resolver.define('getIssueStatus', async ({ context }) => {

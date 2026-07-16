@@ -5,10 +5,11 @@ import ForgeReconciler, {
 import { invoke } from '@forge/bridge';
 
 // Stessa griglia dell'admin, replicata qui per rendere la pagina autonoma.
+// Solo le CHIAVI sono fisse: domanda ed etichette si modificano da testiVal.
 const GRIGLIA_VAL = [
-  { gruppo: 'risoluzione', titolo: 'Risoluzione', voci: [['autonomia', 'In autonomia'], ['collega', 'Con collega'], ['manager', 'Con manager']] },
-  { gruppo: 'documentazione', titolo: 'Documentazione', voci: [['corretta', 'Corretta'], ['errata', 'Errata'], ['nessuna', 'Nessuna']] },
-  { gruppo: 'feedback', titolo: 'Feedback', voci: [['positivo', 'Positivo'], ['negativo', 'Negativo'], ['nessuno', 'Nessuno']] },
+  { gruppo: 'risoluzione', titolo: 'Risoluzione', chiavi: ['autonomia', 'collega', 'manager'] },
+  { gruppo: 'documentazione', titolo: 'Documentazione', chiavi: ['corretta', 'errata', 'nessuna'] },
+  { gruppo: 'feedback', titolo: 'Feedback', chiavi: ['positivo', 'negativo', 'nessuno'] },
 ];
 
 const App = () => {
@@ -19,13 +20,16 @@ const App = () => {
   const [puntiPerTicket, setPuntiPerTicket] = useState('3');
   const [puntiPerAiuto, setPuntiPerAiuto] = useState('10');
   const [puntiVal, setPuntiVal] = useState(null);
+  // Domande ed etichette configurabili: { gruppo: { domanda, opzioni: { chiave: etichetta } } }
+  const [testiVal, setTestiVal] = useState(null);
 
   const carica = () =>
     Promise.all([
       invoke('getConfigPunti'),
       invoke('getConfigAiuto'),
       invoke('getConfigValutazione'),
-    ]).then(([cPunti, cAiuto, cVal]) => {
+      invoke('getTestiValutazione'),
+    ]).then(([cPunti, cAiuto, cVal, cTesti]) => {
       setPuntiPerTicket(String(cPunti.puntiPerTicket));
       setPuntiPerAiuto(String(cAiuto.puntiPerAiuto));
       const c = cVal.config;
@@ -46,6 +50,7 @@ const App = () => {
           nessuno: String(c.feedback.nessuno),
         },
       });
+      setTestiVal(cTesti.testi);
       setCaricato(true);
     });
 
@@ -78,6 +83,17 @@ const App = () => {
     setPuntiVal((prev) => ({ ...prev, [gruppo]: { ...prev[gruppo], [chiave]: valore } }));
   };
 
+  const setDomanda = (gruppo, valore) => {
+    setTestiVal((prev) => ({ ...prev, [gruppo]: { ...prev[gruppo], domanda: valore } }));
+  };
+
+  const setEtichetta = (gruppo, chiave, valore) => {
+    setTestiVal((prev) => ({
+      ...prev,
+      [gruppo]: { ...prev[gruppo], opzioni: { ...prev[gruppo].opzioni, [chiave]: valore } },
+    }));
+  };
+
   const handleSalvaTicket = () =>
     eseguiAzione('setConfigPunti', { puntiPerTicket: Number(puntiPerTicket) }, `Punti per ticket impostati a ${puntiPerTicket}.`);
 
@@ -85,6 +101,10 @@ const App = () => {
     eseguiAzione('setConfigAiuto', { puntiPerAiuto: Number(puntiPerAiuto) }, `Punti per aiuto impostati a ${puntiPerAiuto}.`);
 
   const handleSalvaVal = () => {
+    if (inCorso) return;
+    setInCorso(true);
+    setMessaggio(null);
+
     const config = {
       risoluzione: {
         autonomia: Number(puntiVal.risoluzione.autonomia),
@@ -102,7 +122,25 @@ const App = () => {
         nessuno: Number(puntiVal.feedback.nessuno),
       },
     };
-    eseguiAzione('setConfigValutazione', { config }, 'Punteggi valutazione salvati.');
+
+    Promise.all([
+      invoke('setConfigValutazione', { config }),
+      invoke('setTestiValutazione', { testi: testiVal }),
+    ])
+      .then(([resConfig, resTesti]) => {
+        const errore = resConfig?.errore || resTesti?.errore;
+        if (errore) {
+          setMessaggio({ tipo: 'error', testo: errore });
+          setInCorso(false);
+          return;
+        }
+        setMessaggio({ tipo: 'success', testo: 'Domande e punteggi valutazione salvati.' });
+        return carica().then(() => setInCorso(false));
+      })
+      .catch(() => {
+        setMessaggio({ tipo: 'error', testo: 'Errore imprevisto. Riprova.' });
+        setInCorso(false);
+      });
   };
 
   if (!caricato) return <Text>Caricamento configurazione punteggi...</Text>;
@@ -136,17 +174,29 @@ const App = () => {
         </Inline>
       </Stack>
 
-      {puntiVal && (
-        <Stack space="space.100">
-          <Heading size="small">⚖️ Punteggi autovalutazione</Heading>
-          <Text>Punti reali per ogni scelta dell'autovalutazione. Ammessi decimali e negativi.</Text>
+      {puntiVal && testiVal && (
+        <Stack space="space.200">
+          <Heading size="small">⚖️ Domande e punteggi autovalutazione</Heading>
+          <Text>Testo delle domande, etichette delle risposte e punti reali assegnati a ogni scelta. Ammessi decimali e negativi per i punti.</Text>
           {GRIGLIA_VAL.map((sez) => (
-            <Stack key={sez.gruppo} space="space.050">
+            <Stack key={sez.gruppo} space="space.100">
               <Text font={{ weight: 'bold' }}>{sez.titolo}</Text>
+
+              <Text>Domanda mostrata all'operatore</Text>
+              <Textfield
+                value={testiVal[sez.gruppo].domanda}
+                onChange={(e) => setDomanda(sez.gruppo, e.target.value)}
+              />
+
               <Inline space="space.200" shouldWrap>
-                {sez.voci.map(([chiave, etichetta]) => (
+                {sez.chiavi.map((chiave) => (
                   <Stack key={chiave} space="space.050">
-                    <Text>{etichetta}</Text>
+                    <Text>Etichetta risposta</Text>
+                    <Textfield
+                      value={testiVal[sez.gruppo].opzioni[chiave]}
+                      onChange={(e) => setEtichetta(sez.gruppo, chiave, e.target.value)}
+                    />
+                    <Text>Punti</Text>
                     <Textfield
                       type="number"
                       value={puntiVal[sez.gruppo][chiave]}
@@ -159,7 +209,7 @@ const App = () => {
           ))}
           <Inline>
             <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaVal}>
-              Salva punteggi valutazione
+              Salva domande e punteggi valutazione
             </Button>
           </Inline>
         </Stack>

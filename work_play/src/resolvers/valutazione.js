@@ -42,6 +42,77 @@ export const setPuntiValutazioneConfig = async (cfg) => {
     return pulito;
 };
 
+// Testi di DEFAULT (domanda + etichette) mostrati nel panel operatore.
+// Il numero di domande e di opzioni resta fisso: qui è modificabile solo il testo.
+const DEFAULT_TESTI_VAL = {
+    risoluzione: {
+        domanda: 'Come hai risolto il ticket?',
+        opzioni: {
+            autonomia: '🧠 In autonomia',
+            collega: '🤝 Con aiuto di un collega',
+            manager: '👔 Con aiuto del manager',
+        },
+    },
+    documentazione: {
+        domanda: 'Hai documentato la soluzione?',
+        opzioni: {
+            corretta: '✅ Sì, correttamente',
+            errata: '⚠️ Sì, ma in modo errato',
+            nessuna: '❌ No',
+        },
+    },
+    feedback: {
+        domanda: 'Il cliente ha dato feedback?',
+        opzioni: {
+            positivo: '😊 Positivo',
+            negativo: '😞 Negativo',
+            nessuno: '😐 Nessun feedback',
+        },
+    },
+};
+
+// Config effettiva dei testi: quella salvata dal supervisore, con fallback ai default
+// (stesso pattern di getPuntiValutazioneConfig, così un valore mancante non rompe il panel).
+export const getTestiValutazioneConfig = async () => {
+    const cfg = await kvs.get('config-testi-valutazione');
+    if (!cfg) return DEFAULT_TESTI_VAL;
+    return {
+        risoluzione: {
+            domanda: cfg.risoluzione?.domanda || DEFAULT_TESTI_VAL.risoluzione.domanda,
+            opzioni: { ...DEFAULT_TESTI_VAL.risoluzione.opzioni, ...(cfg.risoluzione?.opzioni || {}) },
+        },
+        documentazione: {
+            domanda: cfg.documentazione?.domanda || DEFAULT_TESTI_VAL.documentazione.domanda,
+            opzioni: { ...DEFAULT_TESTI_VAL.documentazione.opzioni, ...(cfg.documentazione?.opzioni || {}) },
+        },
+        feedback: {
+            domanda: cfg.feedback?.domanda || DEFAULT_TESTI_VAL.feedback.domanda,
+            opzioni: { ...DEFAULT_TESTI_VAL.feedback.opzioni, ...(cfg.feedback?.opzioni || {}) },
+        },
+    };
+};
+
+// Salva i testi (solo stringhe): le CHIAVI di gruppi/opzioni restano fisse,
+// così calcolaPuntiGrezzi() e la validazione delle risposte non cambiano.
+export const setTestiValutazioneConfig = async (testi) => {
+    const pulisciGruppo = (gruppo, chiaviOpzioni) => ({
+        domanda: String(testi?.[gruppo]?.domanda || '').trim() || DEFAULT_TESTI_VAL[gruppo].domanda,
+        opzioni: Object.fromEntries(
+            chiaviOpzioni.map((chiave) => [
+                chiave,
+                String(testi?.[gruppo]?.opzioni?.[chiave] || '').trim() || DEFAULT_TESTI_VAL[gruppo].opzioni[chiave],
+            ])
+        ),
+    });
+    const pulito = {
+        risoluzione: pulisciGruppo('risoluzione', ['autonomia', 'collega', 'manager']),
+        documentazione: pulisciGruppo('documentazione', ['corretta', 'errata', 'nessuna']),
+        feedback: pulisciGruppo('feedback', ['positivo', 'negativo', 'nessuno']),
+    };
+    await kvs.set('config-testi-valutazione', pulito);
+    return pulito;
+};
+
 // Somma i punti REALI dalle scelte e li converte in grezzi (×10, interi).
 const calcolaPuntiGrezzi = (config, risoluzione, documentazione, feedback) => {
     const reale =

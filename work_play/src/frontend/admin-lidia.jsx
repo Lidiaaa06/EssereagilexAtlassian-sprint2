@@ -15,22 +15,12 @@ import ForgeReconciler, {
 import { invoke } from '@forge/bridge';
 
 // Etichetta leggibile per ogni tipo di flag prodotto da antifarming.js
-// Opzioni per la modifica delle autovalutazioni (stessi valori del panel operatore)
-const OPZIONI_RISOLUZIONE = [
-    { label: '🧠 In autonomia', value: 'autonomia' },
-    { label: '🤝 Con collega', value: 'collega' },
-    { label: '👔 Con manager', value: 'manager' },
-];
-const OPZIONI_DOCUMENTAZIONE = [
-    { label: '✅ Corretta', value: 'corretta' },
-    { label: '⚠️ Errata', value: 'errata' },
-    { label: '❌ Nessuna', value: 'nessuna' },
-];
-const OPZIONI_FEEDBACK = [
-    { label: '😊 Positivo', value: 'positivo' },
-    { label: '😞 Negativo', value: 'negativo' },
-    { label: '😐 Nessuno', value: 'nessuno' },
-];
+// Chiavi fisse delle opzioni per la modifica delle autovalutazioni (stesse del panel
+// operatore): le etichette mostrate arrivano invece da testiVal, configurabile dal supervisore.
+const CHIAVI_RISOLUZIONE = ['autonomia', 'collega', 'manager'];
+const CHIAVI_DOCUMENTAZIONE = ['corretta', 'errata', 'nessuna'];
+const CHIAVI_FEEDBACK = ['positivo', 'negativo', 'nessuno'];
+const opzioniDa = (chiavi, etichette) => chiavi.map((chiave) => ({ label: etichette[chiave], value: chiave }));
 
 // Struttura della griglia punteggi valutazione (per generare il form nell'admin)
 const GRIGLIA_VAL = [
@@ -178,6 +168,8 @@ const AdminPage = () => {
     const [valModifiche, setValModifiche] = useState({});
     // Griglia punteggi valutazione configurabile (valori reali, come stringhe per l'input)
     const [puntiVal, setPuntiVal] = useState(null);
+    // Domande ed etichette configurate dal supervisore, usate nelle select di revisione
+    const [testiVal, setTestiVal] = useState(null);
 
     useEffect(() => {
         caricaDati();
@@ -193,7 +185,8 @@ const AdminPage = () => {
             invoke('getValutazioniCongelate'),
             invoke('getConfigValutazione'),
             invoke('getConfigAiuto'),
-        ]).then(([adminData, risultatoSegnalazioni, config, risultatoHOF, risultatoVal, configVal, configAiuto]) => {
+            invoke('getTestiValutazione'),
+        ]).then(([adminData, risultatoSegnalazioni, config, risultatoHOF, risultatoVal, configVal, configAiuto, risultatoTesti]) => {
             setData(adminData);
             // Se l'utente non è supervisore il resolver risponde { errore }
             setSegnalazioni(risultatoSegnalazioni.segnalazioni || []);
@@ -231,6 +224,7 @@ const AdminPage = () => {
                     nessuno: String(c.feedback.nessuno),
                 },
             });
+            setTestiVal(risultatoTesti.testi);
             return adminData;
         });
     };
@@ -392,7 +386,7 @@ const AdminPage = () => {
         eseguiAzione('setConfigValutazione', { config }, 'Punteggi valutazione salvati.');
     };
 
-    if (data === null) return <Text>Caricamento pannello admin...</Text>;
+    if (data === null || testiVal === null) return <Text>Caricamento pannello admin...</Text>;
 
     // Secondo controllo, oltre a quello di Jira sugli amministratori del sito:
     // qui blocchiamo chi non è supervisore secondo il NOSTRO sistema di ruoli.
@@ -615,22 +609,22 @@ const AdminPage = () => {
                                             <Lozenge>proposti: {(v.puntiProposti / 10)} pt</Lozenge>
                                         </Inline>
 
-                                        <Text>Risoluzione</Text>
+                                        <Text>{testiVal.risoluzione.domanda}</Text>
                                         <Select
-                                            options={OPZIONI_RISOLUZIONE}
-                                            value={OPZIONI_RISOLUZIONE.find((o) => o.value === scelte.risoluzione) || null}
+                                            options={opzioniDa(CHIAVI_RISOLUZIONE, testiVal.risoluzione.opzioni)}
+                                            value={opzioniDa(CHIAVI_RISOLUZIONE, testiVal.risoluzione.opzioni).find((o) => o.value === scelte.risoluzione) || null}
                                             onChange={(o) => setScelta(v.id, 'risoluzione', o ? o.value : null)}
                                         />
-                                        <Text>Documentazione</Text>
+                                        <Text>{testiVal.documentazione.domanda}</Text>
                                         <Select
-                                            options={OPZIONI_DOCUMENTAZIONE}
-                                            value={OPZIONI_DOCUMENTAZIONE.find((o) => o.value === scelte.documentazione) || null}
+                                            options={opzioniDa(CHIAVI_DOCUMENTAZIONE, testiVal.documentazione.opzioni)}
+                                            value={opzioniDa(CHIAVI_DOCUMENTAZIONE, testiVal.documentazione.opzioni).find((o) => o.value === scelte.documentazione) || null}
                                             onChange={(o) => setScelta(v.id, 'documentazione', o ? o.value : null)}
                                         />
-                                        <Text>Feedback</Text>
+                                        <Text>{testiVal.feedback.domanda}</Text>
                                         <Select
-                                            options={OPZIONI_FEEDBACK}
-                                            value={OPZIONI_FEEDBACK.find((o) => o.value === scelte.feedback) || null}
+                                            options={opzioniDa(CHIAVI_FEEDBACK, testiVal.feedback.opzioni)}
+                                            value={opzioniDa(CHIAVI_FEEDBACK, testiVal.feedback.opzioni).find((o) => o.value === scelte.feedback) || null}
                                             onChange={(o) => setScelta(v.id, 'feedback', o ? o.value : null)}
                                         />
 
