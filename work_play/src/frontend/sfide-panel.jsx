@@ -101,15 +101,15 @@ const SfidePanel = () => {
     return (
         <Stack space="space.200">
 
-            {/* Messaggio contestuale se workitem è Done */}
+            {/* Messaggio contestuale se ticket è Done */}
             {isDone && (
                 <Stack space="space.100">
-                    <Lozenge appearance="success">✅ Workitem completato!</Lozenge>
-                    <Text>Puoi usare questo workitem per completare le tue sfide attive?</Text>
+                    <Lozenge appearance="success">✅ Ticket completato!</Lozenge>
+                    <Text>Puoi usare questo ticket per completare le tue sfide attive?</Text>
                 </Stack>
             )}
 
-            {/* Messaggio se workitem non è Done */}
+            {/* Messaggio se ticket non è Done */}
             {!isDone && (
                 <Inline space="space.100" alignBlock="center">
                     <Lozenge appearance="moved">⚠️ Ricorda</Lozenge>
@@ -136,7 +136,7 @@ const SfidePanel = () => {
                                 </Lozenge>
                             </Inline>
 
-                            {/* Bottone completa solo se workitem è Done e non è già in completamento */}
+                            {/* Bottone completa solo se ticket è Done e non è già in completamento */}
                             {isDone && !inCompletamento && (
                                 <Button
                                     appearance="primary"

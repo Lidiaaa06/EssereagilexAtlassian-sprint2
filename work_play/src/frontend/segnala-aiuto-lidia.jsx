@@ -18,7 +18,7 @@ const App = () => {
   const [descrizione, setDescrizione] = useState('');
   const [inviato, setInviato] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [aiutiTicket, setAiutiTicket] = useState([]);
+  const [aiutiWorkitem, setAiutiWorkitem] = useState([]);
   const [puntiPerAiuto, setPuntiPerAiuto] = useState(10);
 
   const issueKey = context?.extension?.issue?.key;
@@ -26,7 +26,7 @@ const App = () => {
 
   const caricaAiuti = () => {
     if (!issueKey) return;
-    invoke('getAiutiTicket', { issueKey }).then((res) => setAiutiTicket(res || []));
+    invoke('getAiutiTicket', { issueKey }).then((res) => setAiutiWorkitem(res || []));
   };
 
   useEffect(() => {
@@ -81,7 +81,7 @@ const App = () => {
 
   return (
     <Stack space="space.200">
-      <Text>Chi ti ha aiutato su questo ticket?</Text>
+      <Text>Chi ti ha aiutato su questo workitem?</Text>
       <Select
         options={teamFiltrato}
         value={collegaSelezionato}
@@ -105,10 +105,10 @@ const App = () => {
         {loading ? 'Invio...' : `Segnala Aiuto (+${puntiPerAiuto} punti)`}
       </Button>
 
-      {aiutiTicket.length > 0 && (
+      {aiutiWorkitem.length > 0 && (
         <Stack space="space.100">
-          <Heading size="small">Aiuti segnalati su questo ticket</Heading>
-          {aiutiTicket.map((a, i) => (
+          <Heading size="small">Aiuti segnalati su questo workitem</Heading>
+          {aiutiWorkitem.map((a, i) => (
             <Box key={i} padding="space.150" backgroundColor="color.background.neutral">
               <Stack space="space.050">
                 <Text font={{ weight: 'bold' }}>{a.collegaNome}</Text>

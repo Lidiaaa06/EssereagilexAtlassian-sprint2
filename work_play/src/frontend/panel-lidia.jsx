@@ -17,7 +17,7 @@ const Panel = () => {
     const [isDone, setIsDone] = useState(null);
     const [issueKey, setIssueKey] = useState(null);
     const [aggiuntoHOF, setAggiuntoHOF] = useState(false);
-    // Stato valutazione su questo ticket: undefined = caricamento, null = non valutato,
+    // Stato valutazione su questo workitem: undefined = caricamento, null = non valutato,
     // altrimenti 'congelata' | 'confermata' | 'modificata' | 'rifiutata'
     const [statoVal, setStatoVal] = useState(undefined);
     // Domande ed etichette configurate dal supervisore (null finché non caricate)
@@ -56,7 +56,7 @@ const Panel = () => {
 
     if (isDone === null) return <Text>Caricamento...</Text>;
 
-    if (!isDone) return <Text>🔒 Sblocca la valutazione portando il ticket in Done!</Text>;
+    if (!isDone) return <Text>🔒 Sblocca la valutazione portando il workitem in Done!</Text>;
 
     return (
         <Stack space="space.200">
@@ -101,7 +101,7 @@ const Panel = () => {
                 <Text>Caricamento domande...</Text>
             ) : (
                 <Stack space="space.200">
-                    <Heading>📋 Valutazione ticket (Rispondi sinceramente, il ticket verrà riesaminato dal tuo supervisore)</Heading>
+                    <Heading>📋 Valutazione workitem (Rispondi sinceramente, il workitem verrà riesaminato dal tuo supervisore)</Heading>
 
                     <Text>{testi.risoluzione.domanda}</Text>
                     <RadioGroup

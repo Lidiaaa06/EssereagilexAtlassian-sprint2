@@ -13,7 +13,7 @@ const GamificationUser = () => {
 
   const BADGE_DEMO = [
     { key: 'underdog', emoji: '🐶', name: 'Underdog', description: 'Assegnato per una grande rimonta in classifica.' },
-    { key: 'streak', emoji: '🔥', name: 'Streak', description: 'Assegnato per aver chiuso ticket correttamente per 10 giorni di fila.' },
+    { key: 'streak', emoji: '🔥', name: 'Streak', description: 'Assegnato per aver chiuso workitem correttamente per 10 giorni di fila.' },
   ];
 
   useEffect(() => {
@@ -192,7 +192,7 @@ const GamificationUser = () => {
           {data.statoStagione === 'pausa' && data.riepilogoStagione && (
             <Stack space="space.100">
               <Heading>🏁 Riepilogo Stagione {data.riepilogoStagione.numeroStagione}</Heading>
-              <Text>🎫 Ticket chiusi: {data.riepilogoStagione.ticketChiusi}</Text>
+              <Text>🎫 Workitem chiusi: {data.riepilogoStagione.ticketChiusi}</Text>
               <Text>⭐ Punti guadagnati: {data.riepilogoStagione.puntiGuadagnati}</Text>
               <Text>{data.riepilogoStagione.badge.emoji} Badge raggiunto: {data.riepilogoStagione.badge.name}</Text>
               <Text>🥇 Posizione in classifica: {data.riepilogoStagione.posizione}° / {data.riepilogoStagione.totalePartecipanti}</Text>
@@ -200,8 +200,8 @@ const GamificationUser = () => {
           )}
 
           {/* Punti */}
-          <Text>🎫 Ticket chiusi questa stagione: {data.ticketChiusi}</Text>
-          <Text>⭐ Punti stagione: {data.punti} (ticket: {data.puntiTicket} + sfide: {data.puntiSfide} + valutazioni: {data.puntiValutazione})</Text>
+          <Text>🎫 Workitem chiusi questa stagione: {data.ticketChiusi}</Text>
+          <Text>⭐ Punti stagione: {data.punti} (workitem: {data.puntiTicket} + sfide: {data.puntiSfide} + valutazioni: {data.puntiValutazione})</Text>
           <Text>📜 Punti legacy: {data.puntiLegacy}</Text>
 
           {/* Badge livello */}

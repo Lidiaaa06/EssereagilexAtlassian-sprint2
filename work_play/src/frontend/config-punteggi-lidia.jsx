@@ -17,7 +17,7 @@ const App = () => {
   const [inCorso, setInCorso] = useState(false);
   const [messaggio, setMessaggio] = useState(null); // { tipo, testo }
 
-  const [puntiPerTicket, setPuntiPerTicket] = useState('3');
+  const [puntiPerWorkitem, setPuntiPerWorkitem] = useState('3');
   const [puntiPerAiuto, setPuntiPerAiuto] = useState('10');
   const [puntiVal, setPuntiVal] = useState(null);
   // Domande ed etichette configurabili: { gruppo: { domanda, opzioni: { chiave: etichetta } } }
@@ -30,7 +30,7 @@ const App = () => {
       invoke('getConfigValutazione'),
       invoke('getTestiValutazione'),
     ]).then(([cPunti, cAiuto, cVal, cTesti]) => {
-      setPuntiPerTicket(String(cPunti.puntiPerTicket));
+      setPuntiPerWorkitem(String(cPunti.puntiPerTicket));
       setPuntiPerAiuto(String(cAiuto.puntiPerAiuto));
       const c = cVal.config;
       setPuntiVal({
@@ -94,8 +94,8 @@ const App = () => {
     }));
   };
 
-  const handleSalvaTicket = () =>
-    eseguiAzione('setConfigPunti', { puntiPerTicket: Number(puntiPerTicket) }, `Punti per ticket impostati a ${puntiPerTicket}.`);
+  const handleSalvaWorkitem = () =>
+    eseguiAzione('setConfigPunti', { puntiPerTicket: Number(puntiPerWorkitem) }, `Punti per workitem impostati a ${puntiPerWorkitem}.`);
 
   const handleSalvaAiuto = () =>
     eseguiAzione('setConfigAiuto', { puntiPerAiuto: Number(puntiPerAiuto) }, `Punti per aiuto impostati a ${puntiPerAiuto}.`);
@@ -157,11 +157,11 @@ const App = () => {
       )}
 
       <Stack space="space.100">
-        <Heading size="small">🎯 Punti per ticket</Heading>
+        <Heading size="small">🎯 Punti per workitem</Heading>
         <Text>Punti assegnati a ogni task completata. Vale dal prossimo aggiornamento.</Text>
         <Inline space="space.100" alignBlock="center">
-          <Textfield type="number" value={puntiPerTicket} onChange={(e) => setPuntiPerTicket(e.target.value)} />
-          <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaTicket}>Salva</Button>
+          <Textfield type="number" value={puntiPerWorkitem} onChange={(e) => setPuntiPerWorkitem(e.target.value)} />
+          <Button appearance="primary" isDisabled={inCorso} onClick={handleSalvaWorkitem}>Salva</Button>
         </Inline>
       </Stack>
 

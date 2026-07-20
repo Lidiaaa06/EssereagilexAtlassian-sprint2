@@ -96,7 +96,7 @@ const Intestazione = () => (
                 <Text font={{ weight: 'bold' }} color="color.text.inverse">Legacy</Text>
             </Box>
             <Box xcss={{ width: '80px' }}>
-                <Text font={{ weight: 'bold' }} color="color.text.inverse">Ticket</Text>
+                <Text font={{ weight: 'bold' }} color="color.text.inverse">Workitem</Text>
             </Box>
             <Box xcss={{ width: '110px' }}>
                 <Text font={{ weight: 'bold' }} color="color.text.inverse">Badge speciali</Text>
@@ -156,8 +156,8 @@ const AdminPage = () => {
     const [messaggio, setMessaggio] = useState(null);
     // Disabilita i pulsanti mentre una chiamata è in volo (evita doppi click)
     const [inCorso, setInCorso] = useState(false);
-    // Valore configurabile: punti assegnati a ogni ticket completato
-    const [puntiPerTicket, setPuntiPerTicket] = useState('3');
+    // Valore configurabile: punti assegnati a ogni workitem completato
+    const [puntiPerWorkitem, setPuntiPerWorkitem] = useState('3');
 
     const [puntiPerAiuto, setPuntiPerAiuto] = useState('10');
     // Richieste di inserimento in Hall of Fame, in attesa di approvazione
@@ -190,7 +190,7 @@ const AdminPage = () => {
             setData(adminData);
             // Se l'utente non è supervisore il resolver risponde { errore }
             setSegnalazioni(risultatoSegnalazioni.segnalazioni || []);
-            setPuntiPerTicket(String(config.puntiPerTicket));
+            setPuntiPerWorkitem(String(config.puntiPerTicket));
             setPuntiPerAiuto(String(configAiuto.puntiPerAiuto));
             setRichiesteHOF(risultatoHOF.richieste || []);
             const listaVal = risultatoVal.valutazioni || [];
@@ -298,8 +298,8 @@ const AdminPage = () => {
     const handleSalvaPunti = () => {
         eseguiAzione(
             'setConfigPunti',
-            { puntiPerTicket: Number(puntiPerTicket) },
-            `Punti per ticket impostati a ${puntiPerTicket}.`
+            { puntiPerTicket: Number(puntiPerWorkitem) },
+            `Punti per workitem impostati a ${puntiPerWorkitem}.`
         );
     };
 
@@ -605,7 +605,7 @@ const AdminPage = () => {
                                     <Stack space="space.100">
                                         <Inline space="space.100" alignBlock="center" shouldWrap>
                                             <Text font={{ weight: 'bold' }}>{v.nome}</Text>
-                                            <Text>— {v.issueKey || 'ticket n/d'}</Text>
+                                            <Text>— {v.issueKey || 'workitem n/d'}</Text>
                                             <Lozenge>proposti: {(v.puntiProposti / 10)} pt</Lozenge>
                                         </Inline>
 

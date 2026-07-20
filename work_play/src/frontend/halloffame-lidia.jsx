@@ -3,12 +3,12 @@ import ForgeReconciler, { Text, Heading, Stack, Button, Inline, TextArea, Modal,
 import { invoke } from '@forge/bridge';
 
 const HallOfFame = () => {
-    const [tickets, setTickets] = useState(null);
+    const [workitems, setWorkitems] = useState(null);
     const [accountId, setAccountId] = useState(null);
     const [commentoAperto, setCommentoAperto] = useState(null);
     const [testoCommento, setTestoCommento] = useState('');
     const [paginaCorrente, setPaginaCorrente] = useState(0);
-    const TICKET_PER_PAGINA = 3;
+    const WORKITEM_PER_PAGINA = 3;
 
     useEffect(() => {
         loadData();
@@ -16,7 +16,7 @@ const HallOfFame = () => {
 
     const loadData = () => {
         invoke('getHallOfFame').then(result => {
-            setTickets(result);
+            setWorkitems(result);
         });
         invoke('getUserStats').then(result => {
             setAccountId(result.accountId);
@@ -25,14 +25,14 @@ const HallOfFame = () => {
 
     const handleReaction = (issueKey, reaction) => {
         invoke('toggleReaction', { issueKey, reaction }).then(result => {
-            setTickets(result);
+            setWorkitems(result);
         });
     };
 
     const handleAggiungiCommento = (issueKey) => {
         if (!testoCommento.trim()) return;
         invoke('aggiungiCommento', { issueKey, testo: testoCommento }).then(result => {
-            setTickets(result);
+            setWorkitems(result);
             setCommentoAperto(null);
             setTestoCommento('');
         });
@@ -40,7 +40,7 @@ const HallOfFame = () => {
 
     const handleEliminaCommento = (issueKey, commentoId) => {
         invoke('eliminaCommento', { issueKey, commentoId }).then(result => {
-            setTickets(result);
+            setWorkitems(result);
         });
     };
 
@@ -49,11 +49,11 @@ const HallOfFame = () => {
         return `${data.getDate()}/${data.getMonth() + 1}/${data.getFullYear()}`;
     };
 
-    const ticketsOrdinati = tickets ? [...tickets].reverse() : [];
-    const totalePagine = Math.ceil(ticketsOrdinati.length / TICKET_PER_PAGINA);
-    const ticketsPagina = ticketsOrdinati.slice(
-        paginaCorrente * TICKET_PER_PAGINA,
-        (paginaCorrente + 1) * TICKET_PER_PAGINA
+    const workitemsOrdinati = workitems ? [...workitems].reverse() : [];
+    const totalePagine = Math.ceil(workitemsOrdinati.length / WORKITEM_PER_PAGINA);
+    const workitemsPagina = workitemsOrdinati.slice(
+        paginaCorrente * WORKITEM_PER_PAGINA,
+        (paginaCorrente + 1) * WORKITEM_PER_PAGINA
     );
 
     return (
@@ -85,61 +85,61 @@ const HallOfFame = () => {
 
             <Heading>🏛️ Hall of Fame</Heading>
 
-            {tickets === null ? (
+            {workitems === null ? (
                 <Text>Caricamento...</Text>
-            ) : tickets.length === 0 ? (
-                <Text>Nessun ticket nella Hall of Fame ancora! Nomina un ticket dalla pagina della issue.</Text>
+            ) : workitems.length === 0 ? (
+                <Text>Nessun workitem nella Hall of Fame ancora! Nomina un workitem dalla pagina della issue.</Text>
             ) : (
                 <Stack space="space.300">
-                    {ticketsPagina.map(ticket => (
-                        <Stack key={ticket.id} space="space.100">
+                    {workitemsPagina.map(workitem => (
+                        <Stack key={workitem.id} space="space.100">
 
-                            {/* Header ticket */}
-                            <Text>🎯 {ticket.id} — {ticket.titolo}</Text>
-                            <Text>➕ {ticket.aggiuntoDA}</Text>
-                            <Text>📅 {formatData(ticket.data)}</Text>
-                            <Text>{ticket.descrizione}</Text>
-                            <Text>👤 Completato da: {ticket.assignee}</Text>
+                            {/* Header workitem */}
+                            <Text>🎯 {workitem.id} — {workitem.titolo}</Text>
+                            <Text>➕ {workitem.aggiuntoDA}</Text>
+                            <Text>📅 {formatData(workitem.data)}</Text>
+                            <Text>{workitem.descrizione}</Text>
+                            <Text>👤 Completato da: {workitem.assignee}</Text>
 
                             {/* Reactions */}
                             <Inline space="space.100">
                                 <Button
-                                    appearance={ticket.reactions.fuoco.includes(accountId) ? 'primary' : 'default'}
-                                    onClick={() => handleReaction(ticket.id, 'fuoco')}
+                                    appearance={workitem.reactions.fuoco.includes(accountId) ? 'primary' : 'default'}
+                                    onClick={() => handleReaction(workitem.id, 'fuoco')}
                                 >
-                                    🔥 {ticket.reactions.fuoco.length}
+                                    🔥 {workitem.reactions.fuoco.length}
                                 </Button>
                                 <Button
-                                    appearance={ticket.reactions.cervello.includes(accountId) ? 'primary' : 'default'}
-                                    onClick={() => handleReaction(ticket.id, 'cervello')}
+                                    appearance={workitem.reactions.cervello.includes(accountId) ? 'primary' : 'default'}
+                                    onClick={() => handleReaction(workitem.id, 'cervello')}
                                 >
-                                    🧠 {ticket.reactions.cervello.length}
+                                    🧠 {workitem.reactions.cervello.length}
                                 </Button>
                                 <Button
-                                    appearance={ticket.reactions.fulmine.includes(accountId) ? 'primary' : 'default'}
-                                    onClick={() => handleReaction(ticket.id, 'fulmine')}
+                                    appearance={workitem.reactions.fulmine.includes(accountId) ? 'primary' : 'default'}
+                                    onClick={() => handleReaction(workitem.id, 'fulmine')}
                                 >
-                                    ⚡ {ticket.reactions.fulmine.length}
+                                    ⚡ {workitem.reactions.fulmine.length}
                                 </Button>
                                 <Button
-                                    appearance={ticket.reactions.trofeo.includes(accountId) ? 'primary' : 'default'}
-                                    onClick={() => handleReaction(ticket.id, 'trofeo')}
+                                    appearance={workitem.reactions.trofeo.includes(accountId) ? 'primary' : 'default'}
+                                    onClick={() => handleReaction(workitem.id, 'trofeo')}
                                 >
-                                    🏆 {ticket.reactions.trofeo.length}
+                                    🏆 {workitem.reactions.trofeo.length}
                                 </Button>
                             </Inline>
 
                             {/* Commenti */}
-                            <Text>💬 Commenti ({ticket.commenti.length})</Text>
-                            {ticket.commenti.length > 0 && (
+                            <Text>💬 Commenti ({workitem.commenti.length})</Text>
+                            {workitem.commenti.length > 0 && (
                                 <Stack space="space.050">
-                                    {ticket.commenti.map(commento => (
+                                    {workitem.commenti.map(commento => (
                                         <Inline key={commento.id} space="space.100" alignBlock="center">
                                             <Text>👤 {commento.autore}: {commento.testo}</Text>
                                             {commento.autoreId === accountId && (
                                                 <Button
                                                     appearance="danger"
-                                                    onClick={() => handleEliminaCommento(ticket.id, commento.id)}
+                                                    onClick={() => handleEliminaCommento(workitem.id, commento.id)}
                                                 >
                                                     🗑️
                                                 </Button>
@@ -151,7 +151,7 @@ const HallOfFame = () => {
                             <Button
                                 appearance="subtle"
                                 onClick={() => {
-                                    setCommentoAperto(ticket.id);
+                                    setCommentoAperto(workitem.id);
                                     setTestoCommento('');
                                 }}
                             >
