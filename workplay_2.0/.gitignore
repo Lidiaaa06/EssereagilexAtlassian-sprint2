@@ -1,0 +1,28 @@
+/node_modules/
+/dist/
+
+# Custom UI "Configurazione gruppi".
+#
+# Si ignora ANCHE dist/, che è output di build e non sorgente. Sembra
+# controintuitivo perché è la cartella che il manifest impacchetta, ma è una
+# scelta precisa: se dist/ fosse versionata, chi modifica il React e lancia
+# `forge deploy` senza ricompilare caricherebbe la versione VECCHIA senza
+# alcun errore, e finirebbe a debuggare codice mai deployato.
+# Ignorandola, chi dimentica la build ottiene un errore chiaro invece di un
+# risultato sbagliato silenzioso. Usa sempre `npm run deploy` (vedi README).
+static/gruppi/node_modules/
+static/gruppi/dist/
+/.vscode/
+.idea
+
+/.forge/
+
+
+_collega/
+
+# Cruft del sistema operativo (macOS)
+.DS_Store
+
+# Impostazioni Claude Code PERSONALI (path della propria home, preferenze locali).
+# settings.json invece è condiviso di proposito (regole di permesso per il team).
+.claude/settings.local.json

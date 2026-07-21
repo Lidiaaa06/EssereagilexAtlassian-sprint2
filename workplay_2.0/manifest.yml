@@ -1,0 +1,182 @@
+modules:
+  jira:dashboardGadget:
+    - key: gamification-classifica-user-dashboard-gadget-ui-kit-2-hello-world-gadget
+      title: Gamification - Profilo
+      description: Profilo gamification dell'utente.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: main-resource
+      render: native
+      resolver:
+        function: resolver
+    - key: gamification-classifica-user-classifica-gadget
+      title: Classifica Team - Gamification
+      description: Classifica del team basata sui punti.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: classifica-resource
+      render: native
+      resolver:
+        function: resolver
+    - key: gamification-classifica-user-halloffame-gadget
+      title: Hall of Fame
+      description: I ticket più memorabili del team.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: halloffame-resource
+      render: native
+      resolver:
+        function: resolver
+    - key: gamification-classifica-user-pensieri-gadget
+      title: Pensieri di fine giornata
+      description: Condividi i tuoi pensieri con il team.
+      thumbnail: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: pensieri-resource
+      render: native
+      resolver:
+        function: resolver
+  jira:issuePanel:
+    - key: gamification-classifica-user-issue-panel
+      title: Valutazione & Hall of Fame
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: panel-resource
+      render: native
+      resolver:
+        function: resolver
+    - key: gamification-classifica-user-sfide-panel
+      title: Sfide Attive
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+      resource: sfide-panel-resource
+      render: native
+      resolver:
+        function: resolver
+  # Voce "WorkPlay" nella sezione Activity della issue (accanto a History,
+  # Worklogs, ecc.): mostra i trigger WorkPlay che hanno coinvolto quella issue,
+  # così si verificano dalla history oltre che dall'Audit Log.
+  jira:issueActivity:
+    - key: gamification-classifica-user-workplay-activity
+      title: WorkPlay
+      resource: gruppi-resource/activity
+      resolver:
+        function: resolver
+  jira:adminPage:
+    # Voce top-level della sidebar: unica pagina in Custom UI + Atlaskit del
+    # progetto. Niente "render: native" di proposito — le subpage (sections/
+    # pages) NON supportano UI Kit, ed è da lì che passerà "Configuration".
+    # Il titolo del modulo è il nome dell'APP nella sidebar (come "Structure
+    # Cloud"), le voci sotto vengono da `pages`. Le subpage non supportano
+    # UI Kit: è il motivo per cui questa pagina è Custom UI.
+    - key: gamification-classifica-user-gruppi-page
+      title: WorkPlay
+      resource: gruppi-resource/index
+      resolver:
+        function: resolver
+      # Subpage della sidebar. Il routing NON è automatico: la voce cliccata
+      # cambia solo l'URL, e l'app Custom UI decide cosa mostrare leggendo il
+      # path con view.createHistory() (vedi static/gruppi/src/App.jsx).
+      pages:
+        - key: gruppi-groups
+          title: Groups
+          route: groups
+        - key: gruppi-settings
+          title: Settings
+          route: settings
+    # Il pannello admin storico resta intatto e funzionante, ma si raggiunge da
+    # "Gestisci app → Configura" invece che dalla sidebar: Jira ammette UNA sola
+    # voce senza useAsConfig/useAsGetStarted, e ce la prende la pagina nuova.
+    # Destinato alla potatura guidata: allora decideremo cosa migrare e cosa no.
+    - key: gamification-classifica-user-admin-page
+      title: WorkPlay Admin
+      resource: admin-resource
+      render: native
+      resolver:
+        function: resolver
+      useAsConfig: true
+  # Global page utenti "WorkPlay" nella sidebar Apps. Da UI Kit → Custom UI per
+  # avere i sotto-menu in sidebar (come l'admin con Groups/Settings): il routing
+  # delle `pages` è via view.createHistory(), che è Custom UI. Per ora c'è la sola
+  # sotto-pagina Dashboard; Classifica/Sfide/Hall of Fame (mockup) arriveranno.
+  # Il vecchio hub UI Kit (src/frontend/workplay-hub.jsx) resta su disco come
+  # riferimento ma non è più montato.
+  jira:globalPage:
+    - key: gamification-classifica-user-hub
+      title: WorkPlay
+      resource: gruppi-resource/dashboard
+      resolver:
+        function: resolver
+      pages:
+        - key: hub-dashboard
+          title: Dashboard
+          route: dashboard
+        - key: hub-team-leaderboard
+          title: Team Leaderboard
+          route: team-leaderboard
+  trigger:
+    - key: ticket-done-trigger
+      function: triggerHandler
+      events:
+        - avi:jira:updated:issue
+  # Manutenzione giornaliera: UNICO scheduled trigger che orchestra i lavori che
+  # maturano nel tempo (Decanter, pulizia Audit Log, e in futuro rollover stagioni
+  # e countdown). Open Points id-63: scheduled trigger = infrastruttura condivisa.
+  # interval: day = una volta al giorno (Forge sceglie l'ora).
+  scheduledTrigger:
+    - key: manutenzione-giornaliera
+      function: manutenzioneHandler
+      interval: day
+  function:
+    - key: resolver
+      handler: resolvers/index.handler
+    - key: triggerHandler
+      handler: resolvers/trigger.handler
+    - key: manutenzioneHandler
+      handler: resolvers/manutenzione.handler
+resources:
+  - key: main-resource
+    path: src/frontend/index.jsx
+  - key: panel-resource
+    path: src/frontend/panel.jsx
+  - key: classifica-resource
+    path: src/frontend/classifica.jsx
+  - key: halloffame-resource
+    path: src/frontend/halloffame.jsx
+  - key: pensieri-resource
+    path: src/frontend/pensieri.jsx
+  - key: sfide-panel-resource
+    path: src/frontend/sfide-panel.jsx
+  - key: admin-resource
+    path: src/frontend/admin.jsx
+  # Custom UI: punta all'OUTPUT della build Vite, non ai sorgenti.
+  # Va rigenerato con `npm run build` in static/gruppi prima di ogni deploy.
+  #
+  # `entry` NON è facoltativo qui. Senza, Forge serve modale.html come file
+  # statico qualunque (HTTP 200) ma non lo registra come entry point dell'app:
+  # il Custom UI bridge non gli allestisce il contesto, @forge/bridge lancia
+  # durante l'import e il modulo muore prima di montare React → modale bianca.
+  # Dichiarate qui, si referenziano come <resource-key>/<entry-key>.
+  - key: gruppi-resource
+    path: static/gruppi/dist
+    entry:
+      index: index.html
+      modale: modale.html
+      dashboard: dashboard.html
+      activity: activity.html
+permissions:
+  # CSP della Custom UI. Atlaskit usa Emotion (CSS-in-JS), che inietta gli stili
+  # come <style> inline: senza questa deroga il browser li BLOCCA tutti e la
+  # pagina resta bianca, con la console piena di
+  # "Applying inline style violates the following CSP directive 'style-src'".
+  # Serve solo a static/gruppi/; i moduli UI Kit non ne hanno bisogno perché è
+  # Atlassian a renderizzarli fuori dal nostro iframe.
+  content:
+    styles:
+      - 'unsafe-inline'
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - read:jira-user
+    - read:me
+    - storage:app
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 256
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/d1e90658-28c7-43e4-ac35-beacb7d3fcc3

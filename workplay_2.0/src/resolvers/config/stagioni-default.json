@@ -1,0 +1,10 @@
+{
+  "_commento": "Template delle stagioni di default. NON è una lista di date fisse (come sfide-default.json) perché l'anno dipende da quando l'app viene installata: il seed genera le stagioni datate al primo avvio, a partire dall'anno corrente. Vedi catalogo-stagioni.js.",
+  "anniDaCreare": 3,
+  "trimestri": [
+    { "nome": "1° trimestre", "meseInizio": 0 },
+    { "nome": "2° trimestre", "meseInizio": 3 },
+    { "nome": "3° trimestre", "meseInizio": 6 },
+    { "nome": "4° trimestre", "meseInizio": 9 }
+  ]
+}

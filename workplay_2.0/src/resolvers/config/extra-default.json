@@ -1,0 +1,32 @@
+{
+  "_commento": "Categorie 'extra' (fuori dalle challenge), mostrate nel tab Extra: Feedback e Golden WorkItem. Vengono seedate nello STESSO catalogo delle sfide (catalogo-sfide.js), distinte dal campo `gruppo: extra`. Golden WorkItem è l'ex Golden Ticket, rinominato con la terminologia work item di Jira/JSM in vista dell'uso anche su JSM; è una categoria di sola config (`config: true`, niente item): i suoi numeri (soglia/max/dotazione) vivono in golden-ticket.js e il tab Extra li espone tramite getConfigGoldenTicket/setConfigGoldenTicket.",
+  "categorie": [
+    {
+      "tipo": "feedback",
+      "gruppo": "extra",
+      "emoji": "🤝",
+      "nome": "Feedback",
+      "puntiDefault": 10,
+      "limite": 1,
+      "periodo": "azione",
+      "azione": true
+    },
+    {
+      "tipo": "golden-workitem",
+      "gruppo": "extra",
+      "emoji": "🎫",
+      "nome": "Golden WorkItem",
+      "config": true
+    }
+  ],
+  "sfide": [
+    {
+      "key": "feedback-aiuto",
+      "tipo": "feedback",
+      "emoji": "🤝",
+      "nome": "Aiuto ricevuto da un collega",
+      "punti": 10,
+      "descrizione": "Punti-aiuto accreditati al collega segnalato con \"Segnala aiuto\". Pool separato dai punti stagione."
+    }
+  ]
+}
